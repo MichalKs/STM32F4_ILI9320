@@ -18,7 +18,6 @@
  * @endverbatim
  */
 
-
 #include "uart.h"
 
 /*
@@ -51,7 +50,7 @@ void _fstat() {
  */
 int _read(int fileHandle, char *buf, int len) {
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -64,10 +63,10 @@ int _read(int fileHandle, char *buf, int len) {
  */
 int _write(int fileHandle, char *buf, int len) {
 
-	int i;
-	for (i=0; i<len; i++) {
-		USART2_Putc((uint8_t)buf[i]);
-	}
+  int i;
+  for (i = 0; i < len; i++) {
+    USART2_Putc((uint8_t) buf[i]);
+  }
 
-	return len;
+  return len;
 }

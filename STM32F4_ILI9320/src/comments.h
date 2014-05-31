@@ -20,12 +20,12 @@
 
 /**
  * @defgroup 	StandardDrivers Standard Peripheral Drivers
- * @brief		Hardware
+ * @brief		  Hardware
  */
 
 /**
  * @defgroup 	Timers Timers
- * @brief		Timers
+ * @brief		  Timers
  */
 
 #endif /* COMMENTS_H_ */

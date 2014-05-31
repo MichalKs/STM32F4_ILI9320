@@ -28,6 +28,6 @@
  * @param line
  */
 void assert_failed(uint8_t* file, uint32_t line) {
-      printf("Assert fail at File %s Line %d", file, (int)line);
-      while(1); // hold program
+  printf("Assert fail at File %s Line %d", file, (int) line);
+  while (1); // hold program
 }

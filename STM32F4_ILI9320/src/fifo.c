@@ -23,12 +23,12 @@
  */
 void FIFO_Add(FIFO_TypeDef* fifo) {
 
-	if (fifo->len == 0 ) {
-	}
+  if (fifo->len == 0) {
+  }
 
-	fifo->tail = 0;
-	fifo->head = 0;
-	fifo->count = 0;
+  fifo->tail = 0;
+  fifo->head = 0;
+  fifo->count = 0;
 }
 /**
  * @brief Pushes data to FIFO.
@@ -38,18 +38,18 @@ void FIFO_Add(FIFO_TypeDef* fifo) {
  */
 ErrorStatus FIFO_Push(FIFO_TypeDef* fifo, uint8_t c) {
 
-	if (fifo->count == fifo->len) {
-		return ERROR;
-	}
+  if (fifo->count == fifo->len) {
+    return ERROR;
+  }
 
-	fifo->buf[fifo->head++] = c; // Put char in buffer
-	fifo->count++; // Increase counter
+  fifo->buf[fifo->head++] = c; // Put char in buffer
+  fifo->count++; // Increase counter
 
-	if (fifo->head == fifo->len) {
-		fifo->head = 0;
-	}
+  if (fifo->head == fifo->len) {
+    fifo->head = 0;
+  }
 
-	return SUCCESS;
+  return SUCCESS;
 }
 /**
  * @brief Pops data from the FIFO.
@@ -59,17 +59,17 @@ ErrorStatus FIFO_Push(FIFO_TypeDef* fifo, uint8_t c) {
  */
 ErrorStatus FIFO_Pop(FIFO_TypeDef* fifo, uint8_t* c) {
 
-	if (fifo->count == 0) {
-		return ERROR;
-	}
-	*c = fifo->buf[fifo->tail++];
-	fifo->count--;
+  if (fifo->count == 0) {
+    return ERROR;
+  }
+  *c = fifo->buf[fifo->tail++];
+  fifo->count--;
 
-	if (fifo->tail == fifo->len) {
-		fifo->tail = 0;
-	}
+  if (fifo->tail == fifo->len) {
+    fifo->tail = 0;
+  }
 
-	return SUCCESS;
+  return SUCCESS;
 }
 /**
  * @brief Checks whether the FIFO is empty.
@@ -78,9 +78,9 @@ ErrorStatus FIFO_Pop(FIFO_TypeDef* fifo, uint8_t* c) {
  */
 uint8_t FIFO_IsEmpty(FIFO_TypeDef* fifo) {
 
-	if (fifo->count == 0) {
-		return 1;
-	}
+  if (fifo->count == 0) {
+    return 1;
+  }
 
-	return 0;
+  return 0;
 }

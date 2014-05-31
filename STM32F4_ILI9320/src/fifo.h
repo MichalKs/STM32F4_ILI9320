@@ -15,10 +15,8 @@
  * @endverbatim
  */
 
-
 #ifndef FIFO_H_
 #define FIFO_H_
-
 
 #include <stm32f4xx.h>
 
@@ -26,11 +24,11 @@
  * FIFO structure typedef.
  */
 typedef struct {
-	uint16_t head;	///< Head
-	uint16_t tail;	///< Tail
-	uint8_t* buf;	///< Pointer to buffer
-	uint16_t len;	///< Maximum length of FIFO
-	uint16_t count;	///< Current number of data elements
+  uint16_t head;	///< Head
+  uint16_t tail;	///< Tail
+  uint8_t* buf;	///< Pointer to buffer
+  uint16_t len;	///< Maximum length of FIFO
+  uint16_t count;	///< Current number of data elements
 } FIFO_TypeDef;
 
 void FIFO_Add(FIFO_TypeDef* fifo);

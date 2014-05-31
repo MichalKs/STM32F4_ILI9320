@@ -18,7 +18,6 @@
 #ifndef GRAPHICS_H_
 #define GRAPHICS_H_
 
-
 #include <stm32f4xx.h>
 
 void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
