@@ -95,15 +95,15 @@ void ILI9320_Initializtion(void) {
 
   // Reset the LCD
   GPIO_SetBits(ILI9320_RST_PORT, ILI9320_RST_PIN);
-  TIMER_Delay(50);
+  TIMER_Delay(500);
   GPIO_ResetBits(ILI9320_RST_PORT, ILI9320_RST_PIN);
-  ;
-  TIMER_Delay(50);
+
+  TIMER_Delay(500);
   GPIO_SetBits(ILI9320_RST_PORT, ILI9320_RST_PIN);
-  TIMER_Delay(50);
+  TIMER_Delay(500);
 
   ILI9320_WriteReg(ILI9320_START_OSCILLATION, 0x0001);
-  TIMER_Delay(20);
+  TIMER_Delay(200);
 
   // Read LCD ID
   unsigned int id;
@@ -193,10 +193,10 @@ static void ILI9320_HardInit(void) {
    * FSMC_D13 -	PD8
    * FSMC_D14 -	PD9
    * FSMC_D15	-	PD10
-   * FSMC_NOE	-	PD4
-   * FSMC_NWE	-	PD5
-   * FSMC_NE1 -	PD7
-   * FSMC_A16	-	PD11
+   * FSMC_NOE	-	PD4 - RD
+   * FSMC_NWE	-	PD5 - WR
+   * FSMC_NE1 -	PD7 - CS
+   * FSMC_A16	-	PD11 - RS
    * RESET	-	PB7
    * **************************************************
    */
@@ -256,9 +256,9 @@ static void ILI9320_HardInit(void) {
 
 /**
  *
- * @param R
- * @param G
- * @param B
+ * @param r
+ * @param g
+ * @param b
  * @return
  */
 uint16_t ILI9320_RGBDecode(uint8_t r, uint8_t g, uint8_t b) {

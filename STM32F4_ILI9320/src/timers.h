@@ -21,10 +21,7 @@
 #ifndef TIMERS_H_
 #define TIMERS_H_
 
-/**
- * @addtogroup StandardDrivers
- * @{
- */
+
 
 /**
  * @addtogroup Timers
@@ -36,10 +33,6 @@ void TIMER_Delay(uint32_t ms);
 int8_t TIMER_AddSoftTimer(uint32_t maxVal, void (*fun)(void));
 void TIMER_StartSoftTimer(uint8_t id);
 void TIMER_SoftTimersUpdate();
-
-/**
- * @}
- */
 
 /**
  * @}
