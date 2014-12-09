@@ -1,8 +1,8 @@
 /**
- * @file: 	ili9320.h
- * @brief:	   
- * @date: 	22 maj 2014
- * @author: Michal Ksiezopolski
+ * @file    ili9320.h
+ * @brief   Library for ILI9320 TFT LCD driver.
+ * @date    22 maj 2014
+ * @author  Michal Ksiezopolski
  * 
  * @verbatim
  * Copyright (c) 2014 Michal Ksiezopolski.

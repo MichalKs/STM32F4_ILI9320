@@ -1,8 +1,8 @@
 /**
- * @file: 	ili9320.c
- * @brief:	   
- * @date: 	22 maj 2014
- * @author: Michal Ksiezopolski
+ * @file   ili9320.c
+ * @brief  Library for ILI9320 TFT LCD driver.
+ * @date   22 maj 2014
+ * @author Michal Ksiezopolski
  * 
  * @details The ILI9320 driver can handle 512 pixels horizontally
  * by 256 pixels vertically. My display has only 320x240 pixels,

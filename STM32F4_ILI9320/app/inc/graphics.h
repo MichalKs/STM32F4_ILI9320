@@ -1,6 +1,6 @@
 /**
  * @file: 	graphics.h
- * @brief:	   
+ * @brief:	Graphic library for TFT LCD.
  * @date: 	28 maj 2014
  * @author: Michal Ksiezopolski
  * 

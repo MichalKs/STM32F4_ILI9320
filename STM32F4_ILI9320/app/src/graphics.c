@@ -1,8 +1,8 @@
 /**
- * @file: 	graphics.c
- * @brief:	   
- * @date: 	28 maj 2014
- * @author: Michal Ksiezopolski
+ * @file    graphics.c
+ * @brief   Graphic library for TFT LCD.
+ * @date    28 maj 2014
+ * @author  Michal Ksiezopolski
  * 
  * @verbatim
  * Copyright (c) 2014 Michal Ksiezopolski.
