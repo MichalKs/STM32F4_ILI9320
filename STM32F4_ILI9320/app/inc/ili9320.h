@@ -18,7 +18,7 @@
 #ifndef ILI9320_H_
 #define ILI9320_H_
 
-#include <stm32f4xx.h>
+#include <inttypes.h>
 
 void ILI9320_Initializtion(void);
 void ILI9320_SetWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
