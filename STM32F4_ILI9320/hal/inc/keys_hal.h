@@ -1,7 +1,7 @@
 /**
- * @file: 	comments.h
+ * @file: 	keys_hal.h
  * @brief:	   
- * @date: 	9 kwi 2014
+ * @date: 	6 paź 2014
  * @author: Michal Ksiezopolski
  * 
  * @verbatim
@@ -15,17 +15,13 @@
  * @endverbatim
  */
 
-#ifndef COMMENTS_H_
-#define COMMENTS_H_
+#ifndef KEYS_HAL_H_
+#define KEYS_HAL_H_
 
-/**
- * @defgroup 	StandardDrivers Standard Peripheral Drivers
- * @brief		  Hardware
- */
+#include <inttypes.h>
 
-/**
- * @defgroup 	Timers Timers
- * @brief		  Timers
- */
+int8_t KEYS_HAL_ReadRow(void);
+void KEYS_HAL_SelectColumn(uint8_t col);
+void KEYS_HAL_Init(void);
 
-#endif /* COMMENTS_H_ */
+#endif /* KEYS_HAL_H_ */

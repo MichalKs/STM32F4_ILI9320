@@ -1,7 +1,7 @@
 /**
- * @file: 	uart.h
- * @brief:	   
- * @date: 	12 kwi 2014
+ * @file: 	utils.h
+ * @brief:	Common macros and functions
+ * @date: 	20 lip 2014
  * @author: Michal Ksiezopolski
  * 
  * @verbatim
@@ -15,13 +15,25 @@
  * @endverbatim
  */
 
-#ifndef UART_H_
-#define UART_H_
+#ifndef UTILS_H_
+#define UTILS_H_
 
-#include <stm32f4xx.h>
+#include <inttypes.h>
 
-void UART2_Init(void);
-void USART2_Putc(uint8_t c);
-uint8_t USART2_Getc(void);
+/**
+ * @defgroup  UTILS UTILS
+ * @brief     Common utility functions and macros
+ */
 
-#endif /* UART_H_ */
+/**
+ * @addtogroup UTILS
+ * @{
+ */
+
+void hexdump(uint8_t* buf, uint32_t length);
+
+/**
+ * @}
+ */
+
+#endif /* UTILS_H_ */
