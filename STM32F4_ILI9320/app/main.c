@@ -24,6 +24,7 @@
 #include <led.h>
 #include <comm.h>
 #include <keys.h>
+#include <graphics.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -105,7 +106,8 @@ void softTimerCallback(void) {
   GRAPH_SetColor(0x00, 0x00, 0x00);
   GRAPH_DrawRectangle(0, 0, 320, 240);
   GRAPH_SetColor(0x00, 0x00, 0xff);
-  static int x;
+
+  static int x; // for moving rectangle
   GRAPH_DrawRectangle(x, 100, 50, 50);
   x += 30;
   if (x > 270) {

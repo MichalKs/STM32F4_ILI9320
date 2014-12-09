@@ -27,6 +27,9 @@ typedef struct {
   uint8_t b; ///< Blue
 } GRAPH_ColorStruct;
 
+/**
+ * @brief Structure for reading BMP files
+ */
 typedef struct {
   uint16_t signature;
   uint32_t size;
@@ -52,14 +55,18 @@ static GRAPH_ColorStruct currentColor; ///< Global color
  */
 void GRAPH_Init(void) {
   ILI9320_Initializtion();
+  // window occupies whole LCD screen
   ILI9320_SetWindow(0, 0, 320, 240);
 }
 
 /**
  * @brief Sets the global color variable.
- * @param r
- * @param g
- * @param b
+ *
+ * @details All subsequent objects will be drawn using this color.
+ *
+ * @param r Red
+ * @param g Green
+ * @param b Blue
  */
 void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
 
@@ -70,14 +77,15 @@ void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
 
 /**
  * @brief Draws a rectangle.
- * @param x
- * @param y
- * @param w
- * @param h
+ * @param x X coordinate of start point
+ * @param y Y coordinate of start point
+ * @param w Width
+ * @param h Height
  */
 void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 
   int i, j;
+  // Fill rectangle with color
   for (i = x; i < x + w; i++) {
     for (j = y; j < y + h; j++) {
       ILI9320_DrawPixel(i, j, currentColor.r, currentColor.g, currentColor.b);
@@ -85,11 +93,12 @@ void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
   }
 }
 /**
+ * @brief This function draws a line.
  *
- * @param x1
- * @param y1
- * @param x2
- * @param y2
+ * @param x1 Starting point X coordinate
+ * @param y1 Starting point Y coordinate
+ * @param x2 End point X coordinate
+ * @param y2 End point Y coordinate
  */
 void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
 
@@ -101,6 +110,5 @@ void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     y = y1 + dy * (x - x1) / dx;
     ILI9320_DrawPixel(x, y, currentColor.r, currentColor.g, currentColor.b);
   }
-
 }
 
