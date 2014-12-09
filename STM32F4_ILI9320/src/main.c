@@ -77,14 +77,14 @@ int main(void) {
 void softTimerCallback(void) {
   LED_Toggle(LED0); // Toggle LED
   printf("Test string sent from STM32F4!!!\r\n"); // Print test string
-//  GRAPH_SetColor(0x00, 0x00, 0x00);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  GRAPH_SetColor(0x00, 0x00, 0xff);
-//  static int x;
-//  GRAPH_DrawRectangle(x, 100, 50, 50);
-//  x += 30;
-//  if (x > 270) {
-//    x = 0;
-//  }
+  GRAPH_SetColor(0x00, 0x00, 0x00);
+  GRAPH_DrawRectangle(0, 0, 320, 240);
+  GRAPH_SetColor(0x00, 0x00, 0xff);
+  static int x;
+  GRAPH_DrawRectangle(x, 100, 50, 50);
+  x += 30;
+  if (x > 270) {
+    x = 0;
+  }
 }
 
