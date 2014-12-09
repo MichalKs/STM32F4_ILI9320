@@ -76,7 +76,7 @@ void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 /**
- * @brief Draws a rectangle.
+ * @brief Draws a rectangle (filled).
  * @param x X coordinate of start point
  * @param y Y coordinate of start point
  * @param w Width
@@ -93,6 +93,63 @@ void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
   }
 }
 /**
+ * @brief Draws a box (empty rectangle).
+ * @param x X coordinate of start point
+ * @param y Y coordinate of start point
+ * @param w Width
+ * @param h Height
+ * @param lineWidth Width of borders
+ */
+void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineWidth) {
+
+  // Draw borders
+  GRAPH_DrawRectangle(x, y, lineWidth, h);
+  GRAPH_DrawRectangle(x+lineWidth, y, w-2*lineWidth, lineWidth);
+  GRAPH_DrawRectangle(x+w-lineWidth, y, lineWidth, h);
+  GRAPH_DrawRectangle(x+lineWidth, y+h-lineWidth, w-2*lineWidth, lineWidth);
+
+}
+/**
+ * @brief Draws a circle
+ * @param x0 Center X coordinate.
+ * @param y0 Center Y coordinate.
+ * @param radius Circle radius.
+ */
+void GRAPH_DrawCircle(uint16_t x, uint16_t y, uint16_t radius) {
+
+  int newX = radius;
+  int newY = 0;
+  int error = 1-newX;
+
+  while(newX >= newY) {
+    ILI9320_DrawPixel(newX + x, newY + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(newY + x, newX + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(-newX + x, newY + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(-newY + x, newX + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(-newX + x, -newY + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(-newY + x, -newX + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(newX + x, -newY + y,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(newY + x, -newX + y,
+        currentColor.r, currentColor.g, currentColor.b);
+
+    newY++;
+
+    if (error<0) {
+      error += 2 * newY + 1;
+    } else {
+      newX--;
+      error += 2 * (newY - newX + 1);
+    }
+  }
+}
+/**
  * @brief This function draws a line.
  *
  * @param x1 Starting point X coordinate
@@ -103,8 +160,8 @@ void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
 
   int x, y, dx, dy;
-  dx = x2 - x1;
-  dy = y2 - y1;
+  dx = x2 - x1; // Change in X
+  dy = y2 - y1; // Change in Y
 
   for (x = x1; x < x2; x++) {
     y = y1 + dy * (x - x1) / dx;

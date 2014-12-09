@@ -4,6 +4,10 @@
  * @date: 	22 maj 2014
  * @author: Michal Ksiezopolski
  * 
+ * @details The ILI9320 driver can handle 512 pixels horizontally
+ * by 256 pixels vertically. My display has only 320x240 pixels,
+ * however - the data wraps around.
+ *
  * @verbatim
  * Copyright (c) 2014 Michal Ksiezopolski.
  * All rights reserved. This program and the 

@@ -41,7 +41,10 @@ void softTimerCallback(void);
 #define println(str, args...) (void)0
 #endif
 
-
+/**
+ * @brief Main function
+ * @return Whatever
+ */
 int main(void) {
 	
   COMM_Init(COMM_BAUD_RATE); // initialize communication with PC
@@ -68,9 +71,36 @@ int main(void) {
 
   GRAPH_Init();
 
+  GRAPH_SetColor(0xff, 0x00, 0x00);
+  GRAPH_DrawRectangle(0, 0, 320, 240);
+  TIMER_Delay(1000);
+
+//  GRAPH_SetColor(0x00, 0xff, 0x00);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  TIMER_Delay(1000);
+//
+//  GRAPH_SetColor(0x00, 0x00, 0xff);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  TIMER_Delay(1000);
+//
+//  GRAPH_SetColor(0xff, 0xff, 0xff);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  TIMER_Delay(1000);
+//
+//  GRAPH_SetColor(0xff, 0xff, 0x00);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  TIMER_Delay(1000);
+
+//  GRAPH_SetColor(0x00, 0x00, 0x00);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  TIMER_Delay(1000);
+
   GRAPH_SetColor(0x00, 0x00, 0xff);
-  GRAPH_DrawRectangle(100, 100, 50, 50);
-  GRAPH_DrawLine(0, 0, 320, 240);
+//  GRAPH_DrawRectangle(100, 100, 100, 100);
+//  GRAPH_DrawLine(0, 0, 320, 240);
+  GRAPH_DrawBox(100, 100, 100, 100, 5);
+  GRAPH_DrawCircle(50, 50, 50);
+
 	while (1) {
 
 	  // test delay method
@@ -103,15 +133,15 @@ void softTimerCallback(void) {
 
   LED_Toggle(LED0); // Toggle LED
   println("Test string sent from STM32F4!!!"); // Print test string
-  GRAPH_SetColor(0x00, 0x00, 0x00);
-  GRAPH_DrawRectangle(0, 0, 320, 240);
-  GRAPH_SetColor(0x00, 0x00, 0xff);
-
-  static int x; // for moving rectangle
-  GRAPH_DrawRectangle(x, 100, 50, 50);
-  x += 30;
-  if (x > 270) {
-    x = 0;
-  }
+//  GRAPH_SetColor(0x00, 0x00, 0x00);
+//  GRAPH_DrawRectangle(0, 0, 320, 240);
+//  GRAPH_SetColor(0x00, 0x00, 0xff);
+//
+//  static int x; // for moving rectangle
+//  GRAPH_DrawRectangle(x, 100, 50, 50);
+//  x += 30;
+//  if (x > 270) {
+//    x = 0;
+//  }
 
 }
