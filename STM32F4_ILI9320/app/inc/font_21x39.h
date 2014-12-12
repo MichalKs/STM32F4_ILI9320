@@ -21,8 +21,7 @@
 /**
  * @brief Font (21 pixels by 39 pixels)
  *
- * @details Static const places this in flash only.
- * Every 5 bytes in a row are for one column.
+ * @details Every 5 bytes in a row are for one column.
  * There are 21 columns, which means there are
  * 105 bytes per one character (row).
  * There are 96 characters.

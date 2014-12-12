@@ -29,6 +29,29 @@
 //};
 
 /**
+ * @brief Structure containing information about
+ * a font.
+ */
+typedef struct {
+  const uint8_t* data;    ///< Font pixel data
+  uint8_t columnCount;    ///< How many columns does the font have (we assume every char is in different row)
+  uint8_t bytesPerColumn; ///< Number of bytes per columns
+  uint8_t firstChar;      ///< First character in font in ASCII code
+  uint8_t numberOfChars;  ///< Number of characters in font
+} GRAPH_FontStruct;
+
+/**
+ * @brief Example font (fairly large).
+ */
+static GRAPH_FontStruct currentFont = {
+    font21x39,
+    21,
+    5,
+    32,
+    96
+};
+
+/**
  * @brief Color structure
  */
 typedef struct {
@@ -92,24 +115,29 @@ void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
  */
 void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
 
-  const uint16_t columnCount = 21; // how many columns in font
-  const uint16_t bytesPerColumn = 5; // bytes per one column
-  const uint16_t row = c - 32; // Font skips first 32 ASCII characters
+  const uint16_t row = c - currentFont.firstChar; // Font usually skips first chars (useless)
+  const uint16_t bitsPerByte = 8;
 
-  const uint16_t pos = columnCount * bytesPerColumn * row; // first byte of row
+  // if nonexisting char
+  if (row >= currentFont.numberOfChars) {
+    return;
+  }
 
-  const uint8_t* ptr = font21x39;
+  const uint16_t pos = currentFont.columnCount *
+      currentFont.bytesPerColumn * row; // first byte of row
+
+  const uint8_t* ptr = currentFont.data;
 
   uint16_t bitmask;
 
-  for (int i = 0; i < columnCount; i++) { // for 21 columns
-    for (int j = 0; j < bytesPerColumn; j++) { // for 5 bytes per column
+  for (int i = 0; i < currentFont.columnCount; i++) { // for 21 columns
+    for (int j = 0; j < currentFont.bytesPerColumn; j++) { // for 5 bytes per column
       bitmask = 0x01; // start from lowest bit
-      for (int k = 0; k < 8; k++, bitmask <<= 1) { // for 8 bits in byte
-        if (ptr[pos + i * bytesPerColumn + j] & bitmask) {
-          ILI9320_DrawPixel(x+j*8+k, y+i, 0xff, 0xff, 0xff);
+      for (int k = 0; k < bitsPerByte; k++, bitmask <<= 1) { // for 8 bits in byte
+        if (ptr[pos + i * currentFont.bytesPerColumn + j] & bitmask) {
+          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i, 0xff, 0xff, 0xff);
         } else {
-          ILI9320_DrawPixel(x+j*8+k, y+i, 0xff, 0x00, 0x00);
+          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i, 0xff, 0x00, 0x00);
         }
       }
     }

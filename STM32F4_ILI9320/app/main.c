@@ -102,7 +102,9 @@ int main(void) {
   GRAPH_DrawBox(100, 100, 100, 100, 5);
   GRAPH_DrawFilledCircle(50, 50, 50);
   GRAPH_DrawChar('A', 120, 50);
-  GRAPH_DrawString("Hello", 200, 50);
+  GRAPH_DrawString("Hello World", 200, 0);
+  GRAPH_DrawString("Mouse is", 240, 0);
+  GRAPH_DrawString("not a lion.", 280, 0);
 
 	while (1) {
 
