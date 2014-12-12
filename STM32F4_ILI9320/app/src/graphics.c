@@ -82,6 +82,8 @@ typedef struct {
 } BMP_File;
 
 static GRAPH_ColorStruct currentColor; ///< Global color
+static GRAPH_ColorStruct currentBgColor; ///< Global background color
+
 
 /**
  * @brief Initialized graphics - TFT LCD ILI9320.
@@ -90,6 +92,22 @@ void GRAPH_Init(void) {
   ILI9320_Initializtion();
   // window occupies whole LCD screen
   ILI9320_SetWindow(0, 0, 320, 240);
+  GRAPH_ClrScreen(0, 0, 0); // black screen on startup
+}
+/**
+ * @brief Clears the screen with given color.
+ */
+void GRAPH_ClrScreen(uint8_t r, uint8_t g, uint8_t b) {
+
+  GRAPH_ColorStruct tmp = currentColor; // save current color
+
+  currentColor.r = r;
+  currentColor.b = b;
+  currentColor.g = g;
+
+  GRAPH_DrawRectangle(0, 0, 320, 240);
+
+  currentColor = tmp;
 }
 
 /**
@@ -108,10 +126,23 @@ void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
   currentColor.g = g;
 }
 /**
+ * @brief Sets the global background color variable.
+ *
+ * @param r Red
+ * @param g Green
+ * @param b Blue
+ */
+void GRAPH_SetBgColor(uint8_t r, uint8_t g, uint8_t b) {
+
+  currentBgColor.r = r;
+  currentBgColor.b = b;
+  currentBgColor.g = g;
+}
+/**
  * @brief Draws a character on screen.
  * @param c Character to draw (ASCII code)
- * @param x X coordinate of
- * @param y T coordinate of
+ * @param x X coordinate of character
+ * @param y T coordinate of character
  */
 void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
 
@@ -135,9 +166,11 @@ void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
       bitmask = 0x01; // start from lowest bit
       for (int k = 0; k < bitsPerByte; k++, bitmask <<= 1) { // for 8 bits in byte
         if (ptr[pos + i * currentFont.bytesPerColumn + j] & bitmask) {
-          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i, 0xff, 0xff, 0xff);
+          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i,
+              currentColor.r, currentColor.g, currentColor.b);
         } else {
-          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i, 0xff, 0x00, 0x00);
+          ILI9320_DrawPixel(x+j*bitsPerByte+k, y+i,
+              currentBgColor.r, currentBgColor.g, currentBgColor.b);
         }
       }
     }
