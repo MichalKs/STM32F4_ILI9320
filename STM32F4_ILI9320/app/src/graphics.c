@@ -15,8 +15,18 @@
  * @endverbatim
  */
 
-#include "graphics.h"
-#include "ili9320.h"
+#include <graphics.h>
+#include <ili9320.h>
+#include <font_21x39.h>
+#include <string.h>
+
+/**
+ * @brief Font - 16 rows by 20 columns.
+ */
+//static const uint16_t font16x20[][20] = {
+//    {0x0000, 0x0000, 0x0000, 0x0000, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0f0f, 0x0f0f, 0x0f0f, 0x0fff, 0x0fff,0x0fff, 0x0f0f,0x0f0f,0x0f0f,0x0f0f,0x0f0f,0x0f0f},
+//    {0x0000, 0x0000, 0x0000, 0x0000}
+//};
 
 /**
  * @brief Color structure
@@ -73,6 +83,67 @@ void GRAPH_SetColor(uint8_t r, uint8_t g, uint8_t b) {
   currentColor.r = r;
   currentColor.b = b;
   currentColor.g = g;
+}
+/**
+ * @brief Draws a character on screen.
+ * @param c Character to draw (ASCII code)
+ * @param x X coordinate of
+ * @param y T coordinate of
+ */
+void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
+
+  const uint16_t columnCount = 21; // how many columns in font
+  const uint16_t bytesPerColumn = 5; // bytes per one column
+  const uint16_t row = c - 32; // Font skips first 32 ASCII characters
+
+  const uint16_t pos = columnCount * bytesPerColumn * row; // first byte of row
+
+  const uint8_t* ptr = font21x39;
+
+  uint16_t bitmask;
+
+  for (int i = 0; i < columnCount; i++) { // for 21 columns
+    for (int j = 0; j < bytesPerColumn; j++) { // for 5 bytes per column
+      bitmask = 0x01; // start from lowest bit
+      for (int k = 0; k < 8; k++, bitmask <<= 1) { // for 8 bits in byte
+        if (ptr[pos + i * bytesPerColumn + j] & bitmask) {
+          ILI9320_DrawPixel(x+j*8+k, y+i, 0xff, 0xff, 0xff);
+        } else {
+          ILI9320_DrawPixel(x+j*8+k, y+i, 0xff, 0x00, 0x00);
+        }
+      }
+    }
+  }
+
+//  uint16_t bitmask;
+//
+//  for (int i = 0; i < 20; i++) {
+//    bitmask = 0x8000; // start from highest bit
+//    for (int j = 0; j < 16; j++, bitmask>>=1) {
+//      if (font21x39[i] & bitmask) {
+//        ILI9320_DrawPixel(x+i, y+j, 0xff, 0xff, 0xff);
+//      } else {
+//        ILI9320_DrawPixel(x+i, y+j, 0x00, 0x00, 0x00);
+//      }
+//
+//    }
+//  }
+}
+/**
+ *
+ * @param s
+ * @param x
+ * @param y
+ */
+void GRAPH_DrawString(const char* s, uint16_t x, uint16_t y) {
+
+  uint16_t len = strlen(s);
+
+  // 21 columns in font
+  for (int i = 0; i < len; i++, y+=21) {
+    GRAPH_DrawChar(s[i], x, y);
+  }
+
 }
 
 /**
@@ -148,6 +219,19 @@ void GRAPH_DrawCircle(uint16_t x, uint16_t y, uint16_t radius) {
       error += 2 * (newY - newX + 1);
     }
   }
+}
+/**
+ * @brief Draws a fille circle
+ * @param x0 Center X coordinate.
+ * @param y0 Center Y coordinate.
+ * @param radius Circle radius.
+ */
+void GRAPH_DrawFilledCircle(uint16_t x, uint16_t y, uint16_t radius) {
+
+  while (radius--) {
+    GRAPH_DrawCircle(x,y,radius);
+  }
+
 }
 /**
  * @brief This function draws a line.

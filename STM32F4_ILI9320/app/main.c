@@ -75,6 +75,7 @@ int main(void) {
   GRAPH_DrawRectangle(0, 0, 320, 240);
   TIMER_Delay(1000);
 
+
 //  GRAPH_SetColor(0x00, 0xff, 0x00);
 //  GRAPH_DrawRectangle(0, 0, 320, 240);
 //  TIMER_Delay(1000);
@@ -99,7 +100,9 @@ int main(void) {
 //  GRAPH_DrawRectangle(100, 100, 100, 100);
 //  GRAPH_DrawLine(0, 0, 320, 240);
   GRAPH_DrawBox(100, 100, 100, 100, 5);
-  GRAPH_DrawCircle(50, 50, 50);
+  GRAPH_DrawFilledCircle(50, 50, 50);
+  GRAPH_DrawChar('A', 120, 50);
+  GRAPH_DrawString("Hello", 200, 50);
 
 	while (1) {
 
