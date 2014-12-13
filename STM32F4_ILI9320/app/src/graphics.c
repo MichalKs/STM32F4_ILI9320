@@ -254,8 +254,8 @@ void GRAPH_DrawString(const char* s, uint16_t x, uint16_t y) {
 
   uint16_t len = strlen(s);
 
-  // 21 columns in font
-  for (int i = 0; i < len; i++, y+=21) {
+  // skip columnCount pixel columns for next char
+  for (int i = 0; i < len; i++, y+=currentFont.columnCount) {
     GRAPH_DrawChar(s[i], x, y);
   }
 
@@ -293,6 +293,29 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
   GRAPH_DrawRectangle(x+lineWidth, y, w-2*lineWidth, lineWidth);
   GRAPH_DrawRectangle(x+w-lineWidth, y, lineWidth, h);
   GRAPH_DrawRectangle(x+lineWidth, y+h-lineWidth, w-2*lineWidth, lineWidth);
+
+}
+/**
+ * @brief Draws a graph portraying data (measurements, etc.).
+ * @param data Buffer for displayed data.
+ * @param len Length of data vector.
+ * @param x X coordinate of start point
+ * @param y Y coordinate of start point
+ *
+ * TODO Add graph scaling.
+ *
+ */
+void GRAPH_DrawGraph(uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
+
+  for (int i = 0; i < len; i++) {
+    // draw pixels up and down to make line more visible
+    ILI9320_DrawPixel(x+i,y+data[i]-1,
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(x+i,y+data[i],
+        currentColor.r, currentColor.g, currentColor.b);
+    ILI9320_DrawPixel(x+i,y+data[i]+1,
+        currentColor.r, currentColor.g, currentColor.b);
+  }
 
 }
 /**
