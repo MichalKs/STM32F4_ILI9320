@@ -102,8 +102,12 @@ int main(void) {
   GRAPH_SetColor(0xff, 0xff, 0xff);
   GRAPH_DrawChar('A', 120, 50);
   GRAPH_DrawString("Hello World", 200, 0);
-  GRAPH_DrawString("Mouse is", 240, 0);
+  GRAPH_DrawString("A mouse is", 240, 0);
   GRAPH_DrawString("not a lion.", 280, 0);
+
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GRAPH_DrawImage(30, 30);
 
 	while (1) {
 

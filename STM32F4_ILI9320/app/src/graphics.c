@@ -19,18 +19,22 @@
 #include <ili9320.h>
 #include <font_21x39.h>
 #include <string.h>
-
-/**
- * @brief Font - 16 rows by 20 columns.
- */
-//static const uint16_t font16x20[][20] = {
-//    {0x0000, 0x0000, 0x0000, 0x0000, 0x0fff, 0x0fff, 0x0fff, 0x0fff, 0x0f0f, 0x0f0f, 0x0f0f, 0x0fff, 0x0fff,0x0fff, 0x0f0f,0x0f0f,0x0f0f,0x0f0f,0x0f0f,0x0f0f},
-//    {0x0000, 0x0000, 0x0000, 0x0000}
-//};
+#include <example_bmp.h>
 
 /**
  * @brief Structure containing information about
  * a font.
+ *
+ * @details A font is assumed to be strcutred the following way.
+ * The first bytesPerColumn bytes are for the first pixel column of
+ * the font character. The next bytesPerColumn bytes are for the second
+ * pixel column, etc. until columnCount is reached. The first pixel in a
+ * column corresponds to the LSB of the first byte, so the MSB bits
+ * of the last byte may not be used.
+ *
+ * TODO Ignore the MSB bits of last byte - this isn't very problematic
+ * since for now we draw strings from top to bottom.
+ *
  */
 typedef struct {
   const uint8_t* data;    ///< Font pixel data
@@ -41,6 +45,24 @@ typedef struct {
 } GRAPH_FontStruct;
 
 /**
+ * @brief Structure containing information about
+ * an image.
+ *
+ * @details The image is assumed to be structured in the following way.
+ * Image data starts in the top right corner. The first three bytes are
+ * the RGB bytes of the last column of the first row, next three bytes
+ * are the second to last column of row 1, etc. After column 1 is reached
+ * the next row starts.
+ *
+ */
+typedef struct {
+  const uint8_t* data;    ///< Image data
+  uint16_t rows;          ///< Number of pixel rows
+  uint16_t columns;       ///< Number of pixel columns
+  uint8_t bytesPerPixel;  ///< Number of bytes per pixel
+} GRAPH_ImageStruct;
+
+/**
  * @brief Example font (fairly large).
  */
 static GRAPH_FontStruct currentFont = {
@@ -49,6 +71,15 @@ static GRAPH_FontStruct currentFont = {
     5,
     32,
     96
+};
+/**
+ * @brief Example image to be drawn on screen.
+ */
+static GRAPH_ImageStruct displayedImage = {
+    example_bmp,
+    192,
+    256,
+    3
 };
 
 /**
@@ -81,8 +112,8 @@ typedef struct {
   uint32_t importantColors;
 } BMP_File;
 
-static GRAPH_ColorStruct currentColor; ///< Global color
-static GRAPH_ColorStruct currentBgColor; ///< Global background color
+static GRAPH_ColorStruct currentColor;    ///< Global color
+static GRAPH_ColorStruct currentBgColor;  ///< Global background color
 
 
 /**
@@ -137,6 +168,29 @@ void GRAPH_SetBgColor(uint8_t r, uint8_t g, uint8_t b) {
   currentBgColor.r = r;
   currentBgColor.b = b;
   currentBgColor.g = g;
+}
+/**
+ * @brief Draws an image on screen.
+ * @param x X coordinate of top right corner.
+ * @param y Y coordinate of top right corner.
+ *
+ * TODO Make function more general.
+ */
+void GRAPH_DrawImage(uint16_t x, uint16_t y) {
+
+  int r, g, b;
+  int pos;
+
+  for (int i = 0; i < displayedImage.rows; i++) { // rows
+    for (int j = 0; j < displayedImage.columns; j++) { // columns
+      pos = (i*displayedImage.columns+j)*displayedImage.bytesPerPixel;
+      r = displayedImage.data[pos];
+      g = displayedImage.data[pos+1];
+      b = displayedImage.data[pos+2];
+      ILI9320_DrawPixel(j+x, i+y, r, g, b);
+    }
+  }
+
 }
 /**
  * @brief Draws a character on screen.
