@@ -118,16 +118,24 @@ int main(void) {
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawImage(30, 30);
 
-  TIMER_Delay(3000);
+//  TIMER_Delay(3000);
+//  GRAPH_ClrScreen(0, 0, 0);
+//  GRAPH_DrawLine(0, 0, 320, 240);
+//  GRAPH_DrawLine(0, 0, 10, 240);
+//  GRAPH_DrawLine(0, 0, 0, 240);
+//  GRAPH_DrawLine(0, 0, 320, 0);
 
   // data for example graph - sinusoidal signal
   uint8_t graphData[320];
   double x = 0.0;
+
   for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
 
     graphData[i] = (uint8_t)(sin(x)*100 + 100);
 
   }
+
+  TIMER_Delay(3000);
   GRAPH_ClrScreen(0, 0, 0);
   GRAPH_DrawGraph(graphData, 290, 0, 0);
 

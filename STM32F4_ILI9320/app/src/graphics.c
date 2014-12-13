@@ -20,6 +20,7 @@
 #include <string.h>
 #include <example_bmp.h>
 #include <font_8x16.h>
+#include <math.h>
 
 /**
  * @brief Structure containing information about
@@ -234,10 +235,11 @@ void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
 //  }
 }
 /**
- *
- * @param s
- * @param x
- * @param y
+ * @brief Writes a string on the LCD
+ * @param s String to write
+ * @param x X coordinate
+ * @param y Y coordinate
+ * TODO Enable drawing vertical and horizontal strings.
  */
 void GRAPH_DrawString(const char* s, uint16_t x, uint16_t y) {
 
@@ -297,14 +299,30 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
  */
 void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
 
-  x += 30; // offset for axis and description
+  const uint16_t xOffset = 30; // offset for axis and description
+  x += xOffset;
+
+  const uint16_t yOffset = 30; // offset for axis and description
+  y += yOffset;
+
+  const uint16_t maxDataLen = 320 - xOffset - 20;
 
   GRAPH_FontStruct tmp = currentFont; // save current font
 
   GRAPH_SetFont(font8x16Info);
+  // X axis description
   GRAPH_DrawString("Voltage [V]", 5, 50);
+  // X axis
+  GRAPH_DrawLine(x-2, y-2, x-2, 230);
+  GRAPH_DrawLine(x-2, 230, x-12, 220);
+  GRAPH_DrawLine(x-2, 230, x+8, 220);
+  // Y axis
+  GRAPH_DrawLine(x-2, y-2, 310, y-2);
+  GRAPH_DrawLine(310, y-2, 300, y-12);
+  GRAPH_DrawLine(310, y-2, 300, y+8);
 
-  y += 1; // offset for later line widening
+  if (len > maxDataLen)
+    len = maxDataLen;
 
   for (int i = 0; i < len; i++) {
     // draw pixels up and down to make line more visible
@@ -406,13 +424,43 @@ void GRAPH_DrawFilledCircle(uint16_t x, uint16_t y, uint16_t radius) {
  */
 void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
 
-  int x, y, dx, dy;
-  dx = x2 - x1; // Change in X
-  dy = y2 - y1; // Change in Y
+  int dx = x2>x1 ? (x2-x1) : (x1-x2); // slope
+  int sx = x1<x2 ? 1 : -1; // sign
+  int dy = y2>y1 ? (y2-y1) : (y1-y2); // slope
+  int sy = y1<y2 ? 1 : -1; // sign
 
-  for (x = x1; x < x2; x++) {
-    y = y1 + dy * (x - x1) / dx;
-    ILI9320_DrawPixel(x, y, currentColor.r, currentColor.g, currentColor.b);
+  int err = (dx>dy ? dx : -dy)/2; // error
+  int tmpErr;
+
+  for(;;) {
+
+    ILI9320_DrawPixel(x1, y1, currentColor.r, currentColor.g, currentColor.b);
+
+    // if end of line
+    if (x1==x2 && y1==y2) {
+      break;
+    }
+
+    tmpErr = err;
+
+    if (tmpErr >-dx) {
+      err -= dy;
+      x1 += sx;
+    }
+
+    if (tmpErr < dy) {
+      err += dx;
+      y1 += sy;
+    }
   }
+
+//  double x, y, dx, dy;
+//  dx = x2 - x1; // Change in X
+//  dy = y2 - y1; // Change in Y
+//
+//  for (x = x1; x < x2; x++) {
+//    y = y1 + dy * (x - x1) / dx;
+//    ILI9320_DrawPixel(x, y, currentColor.r, currentColor.g, currentColor.b);
+//  }
 }
 
