@@ -305,7 +305,7 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
  * TODO Add graph scaling.
  *
  */
-void GRAPH_DrawGraph(uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
+void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
 
   for (int i = 0; i < len; i++) {
     // draw pixels up and down to make line more visible
@@ -315,6 +315,30 @@ void GRAPH_DrawGraph(uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
         currentColor.r, currentColor.g, currentColor.b);
     ILI9320_DrawPixel(x+i,y+data[i]+1,
         currentColor.r, currentColor.g, currentColor.b);
+  }
+
+}
+/**
+ * @brief Draws a bar chart portraying data (measurements, etc.).
+ * @param data Buffer for displayed data.
+ * @param len Length of data vector.
+ * @param x X coordinate of start point
+ * @param y Y coordinate of start point
+ * @param width Width of single bar.
+ *
+ * TODO Add graph scaling.
+ *
+ */
+void GRAPH_DrawBarChart(const uint8_t* data, uint16_t len,
+    uint16_t x, uint16_t y, uint16_t width) {
+
+  uint16_t pos = x;
+
+  const uint8_t space = 5; // space between bars
+
+  for (int i = 0; i < len; i++, pos+=width+space) {
+    // draw pixels up and down to make line more visible
+    GRAPH_DrawRectangle(pos, 0, width, data[i]);
   }
 
 }

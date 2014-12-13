@@ -32,6 +32,7 @@ void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y);
 void GRAPH_SetBgColor(uint8_t r, uint8_t g, uint8_t b);
 void GRAPH_ClrScreen(uint8_t r, uint8_t g, uint8_t b);
 void GRAPH_DrawImage(uint16_t x, uint16_t y);
-void GRAPH_DrawGraph(uint8_t* data, uint16_t len, uint16_t x, uint16_t y);
+void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y);
+void GRAPH_DrawBarChart(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y, uint16_t width);
 
 #endif /* GRAPHICS_H_ */

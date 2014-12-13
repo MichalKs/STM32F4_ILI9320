@@ -105,9 +105,9 @@ int main(void) {
   GRAPH_DrawString("A mouse is", 240, 0);
   GRAPH_DrawString("not a lion.", 280, 0);
 
-  TIMER_Delay(3000);
-  GRAPH_ClrScreen(0, 0, 0);
-  GRAPH_DrawImage(30, 30);
+//  TIMER_Delay(3000);
+//  GRAPH_ClrScreen(0, 0, 0);
+//  GRAPH_DrawImage(30, 30);
 
   TIMER_Delay(3000);
 
@@ -121,6 +121,11 @@ int main(void) {
   }
   GRAPH_ClrScreen(0, 0, 0);
   GRAPH_DrawGraph(graphData, 320, 0, 0);
+
+  // draw example bar chart
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
 	while (1) {
 
