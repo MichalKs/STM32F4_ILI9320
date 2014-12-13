@@ -19,6 +19,7 @@
 #include <ili9320.h>
 #include <string.h>
 #include <example_bmp.h>
+#include <font_8x16.h>
 
 /**
  * @brief Structure containing information about
@@ -296,6 +297,15 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
  */
 void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
 
+  x += 30; // offset for axis and description
+
+  GRAPH_FontStruct tmp = currentFont; // save current font
+
+  GRAPH_SetFont(font8x16Info);
+  GRAPH_DrawString("Voltage [V]", 5, 50);
+
+  y += 1; // offset for later line widening
+
   for (int i = 0; i < len; i++) {
     // draw pixels up and down to make line more visible
     ILI9320_DrawPixel(x+i,y+data[i]-1,
@@ -305,6 +315,8 @@ void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) 
     ILI9320_DrawPixel(x+i,y+data[i]+1,
         currentColor.r, currentColor.g, currentColor.b);
   }
+
+  GRAPH_SetFont(tmp); // restore font
 
 }
 /**
