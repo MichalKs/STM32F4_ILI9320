@@ -25,6 +25,10 @@
 #include <comm.h>
 #include <keys.h>
 #include <graphics.h>
+#include <font_14x27.h>
+#include <font_21x39.h>
+#include <font_10x20.h>
+#include <font_8x16.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -100,32 +104,37 @@ int main(void) {
   GRAPH_DrawBox(100, 100, 100, 100, 5);
   GRAPH_DrawFilledCircle(50, 50, 50);
   GRAPH_SetColor(0xff, 0xff, 0xff);
+  GRAPH_SetFont(font21x39Info);
   GRAPH_DrawChar('A', 120, 50);
   GRAPH_DrawString("Hello World", 200, 0);
+  GRAPH_SetFont(font14x27Info);
   GRAPH_DrawString("A mouse is", 240, 0);
+  GRAPH_SetFont(font10x20Info);
   GRAPH_DrawString("not a lion.", 280, 0);
+  GRAPH_SetFont(font8x16Info);
+  GRAPH_DrawString("To be or not to be", 170, 0);
 
 //  TIMER_Delay(3000);
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawImage(30, 30);
 
-  TIMER_Delay(3000);
+//  TIMER_Delay(3000);
 
   // data for example graph - sinusoidal signal
-  uint8_t graphData[320];
-  double x = 0.0;
-  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
-
-    graphData[i] = (uint8_t)(sin(x)*100 + 100);
-
-  }
-  GRAPH_ClrScreen(0, 0, 0);
-  GRAPH_DrawGraph(graphData, 320, 0, 0);
+//  uint8_t graphData[320];
+//  double x = 0.0;
+//  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
+//
+//    graphData[i] = (uint8_t)(sin(x)*100 + 100);
+//
+//  }
+//  GRAPH_ClrScreen(0, 0, 0);
+//  GRAPH_DrawGraph(graphData, 320, 0, 0);
 
   // draw example bar chart
-  TIMER_Delay(3000);
-  GRAPH_ClrScreen(0, 0, 0);
-  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
+//  TIMER_Delay(3000);
+//  GRAPH_ClrScreen(0, 0, 0);
+//  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
 	while (1) {
 

@@ -20,6 +20,31 @@
 
 #include <inttypes.h>
 
+
+/**
+ * @brief Structure containing information about
+ * a font.
+ *
+ * @details A font is assumed to be strcutred the following way.
+ * The first bytesPerColumn bytes are for the first pixel column of
+ * the font character. The next bytesPerColumn bytes are for the second
+ * pixel column, etc. until columnCount is reached. The first pixel in a
+ * column corresponds to the LSB of the first byte, so the MSB bits
+ * of the last byte may not be used.
+ *
+ * TODO Ignore the MSB bits of last byte - this isn't very problematic
+ * since for now we draw strings from top to bottom.
+ *
+ */
+typedef struct {
+  const uint8_t* data;    ///< Font pixel data
+  uint8_t columnCount;    ///< How many columns does the font have (we assume every char is in different row)
+  uint8_t bytesPerColumn; ///< Number of bytes per columns
+  uint8_t firstChar;      ///< First character in font in ASCII code
+  uint8_t numberOfChars;  ///< Number of characters in font
+} GRAPH_FontStruct;
+
+
 void GRAPH_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void GRAPH_Init(void);
@@ -34,5 +59,6 @@ void GRAPH_ClrScreen(uint8_t r, uint8_t g, uint8_t b);
 void GRAPH_DrawImage(uint16_t x, uint16_t y);
 void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y);
 void GRAPH_DrawBarChart(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y, uint16_t width);
+void GRAPH_SetFont(GRAPH_FontStruct font);
 
 #endif /* GRAPHICS_H_ */

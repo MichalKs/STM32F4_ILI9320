@@ -17,32 +17,8 @@
 
 #include <graphics.h>
 #include <ili9320.h>
-#include <font_21x39.h>
 #include <string.h>
 #include <example_bmp.h>
-
-/**
- * @brief Structure containing information about
- * a font.
- *
- * @details A font is assumed to be strcutred the following way.
- * The first bytesPerColumn bytes are for the first pixel column of
- * the font character. The next bytesPerColumn bytes are for the second
- * pixel column, etc. until columnCount is reached. The first pixel in a
- * column corresponds to the LSB of the first byte, so the MSB bits
- * of the last byte may not be used.
- *
- * TODO Ignore the MSB bits of last byte - this isn't very problematic
- * since for now we draw strings from top to bottom.
- *
- */
-typedef struct {
-  const uint8_t* data;    ///< Font pixel data
-  uint8_t columnCount;    ///< How many columns does the font have (we assume every char is in different row)
-  uint8_t bytesPerColumn; ///< Number of bytes per columns
-  uint8_t firstChar;      ///< First character in font in ASCII code
-  uint8_t numberOfChars;  ///< Number of characters in font
-} GRAPH_FontStruct;
 
 /**
  * @brief Structure containing information about
@@ -62,16 +38,11 @@ typedef struct {
   uint8_t bytesPerPixel;  ///< Number of bytes per pixel
 } GRAPH_ImageStruct;
 
+
 /**
- * @brief Example font (fairly large).
+ * @brief Currently set font.
  */
-static GRAPH_FontStruct currentFont = {
-    font21x39,
-    21,
-    5,
-    32,
-    96
-};
+static GRAPH_FontStruct currentFont;
 /**
  * @brief Example image to be drawn on screen.
  */
@@ -140,6 +111,18 @@ void GRAPH_ClrScreen(uint8_t r, uint8_t g, uint8_t b) {
 
   currentColor = tmp;
 }
+/**
+ * @brief Sets the currently used font.
+ *
+ * @details This function should be called before attempting
+ * to write a string to the LCD.
+ *
+ * @param font Font information structure.
+ */
+void GRAPH_SetFont(GRAPH_FontStruct font) {
+
+  currentFont = font;
+}
 
 /**
  * @brief Sets the global color variable.
@@ -199,6 +182,11 @@ void GRAPH_DrawImage(uint16_t x, uint16_t y) {
  * @param y T coordinate of character
  */
 void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
+
+  // no font set
+  if (currentFont.data == 0) {
+    return;
+  }
 
   const uint16_t row = c - currentFont.firstChar; // Font usually skips first chars (useless)
   const uint16_t bitsPerByte = 8;
@@ -302,7 +290,8 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
  * @param x X coordinate of start point
  * @param y Y coordinate of start point
  *
- * TODO Add graph scaling.
+ * TODO Add graph scaling. Add axes and their
+ * descriptions, graph title.
  *
  */
 void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) {
