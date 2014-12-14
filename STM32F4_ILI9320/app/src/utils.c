@@ -31,7 +31,7 @@
  * @param length Number of bytes to send.
  * @warning Uses blocking delays so as not to overflow buffer.
  */
-void hexdump(uint8_t* buf, uint32_t length) {
+void hexdump(const uint8_t const *buf, uint32_t length) {
 
   uint32_t i = 0;
 
@@ -46,9 +46,10 @@ void hexdump(uint8_t* buf, uint32_t length) {
     }
     // delay every 50 chars
     if ((i % 50) == 0) {
-      TIMER_Delay(100); // Delay so as not to overflow buffer
+//      TIMER_Delay(100); // Delay so as not to overflow buffer
     }
   }
+  printf("\r\n");
 }
 
 /**

@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
 #include <timers.h>
 #include <led.h>
 #include <comm.h>
@@ -29,6 +28,7 @@
 #include <font_21x39.h>
 #include <font_10x20.h>
 #include <font_8x16.h>
+#include <tsc2046.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -126,18 +126,18 @@ int main(void) {
 //  GRAPH_DrawLine(0, 0, 320, 0);
 
   // data for example graph - sinusoidal signal
-  uint8_t graphData[320];
-  double x = 0.0;
+//  uint8_t graphData[320];
+//  double x = 0.0;
+//
+//  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
+//    graphData[i] = (uint8_t)(sin(x)*100 + 100);
+//  }
+//
+//  TIMER_Delay(3000);
+//  GRAPH_ClrScreen(0, 0, 0);
+//  GRAPH_DrawGraph(graphData, 290, 0, 0);
 
-  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
-
-    graphData[i] = (uint8_t)(sin(x)*100 + 100);
-
-  }
-
-  TIMER_Delay(3000);
-  GRAPH_ClrScreen(0, 0, 0);
-  GRAPH_DrawGraph(graphData, 290, 0, 0);
+  TSC2046_Init();
 
   // draw example bar chart
 //  TIMER_Delay(3000);
@@ -175,7 +175,7 @@ int main(void) {
 void softTimerCallback(void) {
 
   LED_Toggle(LED0); // Toggle LED
-  println("Test string sent from STM32F4!!!"); // Print test string
+//  println("Test string sent from STM32F4!!!"); // Print test string
 //  GRAPH_SetColor(0x00, 0x00, 0x00);
 //  GRAPH_DrawRectangle(0, 0, 320, 240);
 //  GRAPH_SetColor(0x00, 0x00, 0xff);
