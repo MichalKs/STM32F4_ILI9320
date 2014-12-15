@@ -29,6 +29,7 @@
 #include <font_10x20.h>
 #include <font_8x16.h>
 #include <tsc2046.h>
+#include <stm32f4xx.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -177,12 +178,20 @@ int main(void) {
 	    counter = TIMER_GetTime();
 	    irqReceived = 2;
 	  } else if (irqReceived == 2) { // debounce delay
-	    if (TIMER_GetTime()- counter >= 100) {
+	    if (TIMER_GetTime()- counter >= 20) {
 	      irqReceived = 3;
-	      TSC2046_ReadPos();
+	      if (!GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1)) {
+          uint16_t result = TSC2046_ReadPos();
+          if (result <= 1700) {
+            LED_ChangeState(LED1, LED_ON);
+          }
+          if (result > 1700) {
+            LED_ChangeState(LED1, LED_OFF);
+          }
+	      }
 	    }
 	  } else if (irqReceived == 3) { // wait for next measurement
-      if (TIMER_GetTime()- counter >= 1000) {
+      if (TIMER_GetTime()- counter >= 100) {
         irqReceived = 0;
         flag = 0;
       }

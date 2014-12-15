@@ -18,7 +18,9 @@
 #ifndef INC_TSC2046_H_
 #define INC_TSC2046_H_
 
+#include <inttypes.h>
+
 void TSC2046_Init(void);
-void TSC2046_ReadPos(void);
+uint16_t TSC2046_ReadPos(void);
 
 #endif /* INC_TSC2046_H_ */

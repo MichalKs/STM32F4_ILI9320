@@ -80,7 +80,7 @@ void TSC2046_Init(void) {
  * FIXME This is just a test function for now.
  * TODO Place low level stuff in HAL
  */
-void TSC2046_ReadPos(void) {
+uint16_t TSC2046_ReadPos(void) {
 
   NVIC_DisableIRQ(EXTI1_IRQn);
 
@@ -102,5 +102,7 @@ void TSC2046_ReadPos(void) {
   SPI1_Deselect();
   EXTI_ClearITPendingBit(EXTI_Line1);
   NVIC_EnableIRQ(EXTI1_IRQn);
+
+  return result;
 
 }
