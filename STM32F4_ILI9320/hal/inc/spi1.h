@@ -18,7 +18,7 @@
 #ifndef SPI_H_
 #define SPI_H_
 
-#include <stm32f4xx.h>
+#include <inttypes.h>
 
 /**
  * @defgroup  SPI1 SPI1

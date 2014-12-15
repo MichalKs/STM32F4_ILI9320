@@ -137,12 +137,15 @@ int main(void) {
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawGraph(graphData, 290, 0, 0);
 
-  TSC2046_Init();
-
   // draw example bar chart
 //  TIMER_Delay(3000);
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
+
+
+  TSC2046_Init();
+  uint32_t counter = 0;
+  uint8_t irqReceived = 0;
 
 	while (1) {
 
@@ -163,6 +166,28 @@ int main(void) {
 	    if (!strcmp((char*)buf, ":LED0 OFF")) {
 	      LED_ChangeState(LED0, LED_OFF);
 	    }
+      if (!strcmp((char*)buf, ":TSC")) {
+        TSC2046_ReadPos();
+      }
+	  }
+
+	  extern volatile uint8_t flag;
+
+	  if (irqReceived == 1) { // init counter
+	    counter = TIMER_GetTime();
+	    irqReceived = 2;
+	  } else if (irqReceived == 2) { // debounce delay
+	    if (TIMER_GetTime()- counter >= 100) {
+	      irqReceived = 3;
+	      TSC2046_ReadPos();
+	    }
+	  } else if (irqReceived == 3) { // wait for next measurement
+      if (TIMER_GetTime()- counter >= 1000) {
+        irqReceived = 0;
+        flag = 0;
+      }
+	  } else if (flag) { // irq received
+	    irqReceived = 1;
 	  }
 
 		TIMER_SoftTimersUpdate(); // run timers
@@ -173,7 +198,7 @@ int main(void) {
  * @brief Callback function called on every soft timer overflow
  */
 void softTimerCallback(void) {
-
+//  TSC2046_ReadPos();
   LED_Toggle(LED0); // Toggle LED
 //  println("Test string sent from STM32F4!!!"); // Print test string
 //  GRAPH_SetColor(0x00, 0x00, 0x00);

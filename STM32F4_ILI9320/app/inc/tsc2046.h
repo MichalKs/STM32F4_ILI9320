@@ -19,5 +19,6 @@
 #define INC_TSC2046_H_
 
 void TSC2046_Init(void);
+void TSC2046_ReadPos(void);
 
 #endif /* INC_TSC2046_H_ */
