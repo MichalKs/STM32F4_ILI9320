@@ -22,5 +22,7 @@
 
 void TSC2046_Init(void);
 void TSC2046_Update(void);
+int TSC2046_RegisterEvent(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+    void (*cb)(uint16_t x, uint16_t y));
 
 #endif /* INC_TSC2046_H_ */

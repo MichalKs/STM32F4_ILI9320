@@ -35,6 +35,8 @@
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
 
 void softTimerCallback(void);
+void tscEvent1(uint16_t x, uint16_t y);
+void tscEvent2(uint16_t x, uint16_t y);
 
 #define DEBUG
 
@@ -112,6 +114,8 @@ int main(void) {
 //  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
   TSC2046_Init(); // initialize touchscreen
+  // register an event for a given region
+  TSC2046_RegisterEvent(0, 0, 2000, 2000, tscEvent1);
 
 	while (1) {
 
@@ -142,4 +146,8 @@ int main(void) {
  */
 void softTimerCallback(void) {
 //  LED_Toggle(LED0); // Toggle LED
+}
+
+void tscEvent1(uint16_t x, uint16_t y) {
+  LED_Toggle(LED0);
 }

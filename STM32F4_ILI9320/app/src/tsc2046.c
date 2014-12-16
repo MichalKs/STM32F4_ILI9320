@@ -57,6 +57,9 @@
 #define PD_ADC_OFF    0b10
 #define PD_ALWAYS_ON  0b11
 
+#define DEBOUNCE_TIME 20
+#define WAIT_TIME 100
+
 /**
  * @brief Control byte
  *
@@ -76,6 +79,24 @@ typedef union {
   } bits;
   uint8_t byte;
 } ControlByteTypedef;
+
+#define MAX_EVENTS 20
+/**
+ * @brief Structure for defining an event triggered but touching
+ * a specific region of the touchscreen.
+ *
+ * TODO Implement hold and swipes.
+ */
+typedef struct {
+  void (*cb)(uint16_t x, uint16_t y); ///< Callback function for event (gets exact coordinates of touch)
+  uint16_t x;       ///< X coordinate of event region origin
+  uint16_t y;       ///< Y coordinate of event region origin
+  uint16_t width;   ///< Width of event region
+  uint16_t height;  ///< Height of event region
+} TSC2046_EventTypedef;
+
+static TSC2046_EventTypedef events[MAX_EVENTS]; ///< Registered events
+static int registeredEvents; ///< Number of registered events
 
 static uint8_t penirqAsserted; ///< Is PENIRQ low?
 
@@ -109,6 +130,36 @@ void TSC2046_Init(void) {
   SPI1_Deselect();
 }
 /**
+ * @brief Registers a given region of the touchscreen
+ * to trigger an event.
+ *
+ * @param x
+ * @param y
+ * @param w
+ * @param h
+ * @param cb Callback function for event.
+ * @return Current event index or -1 in case of error.
+ */
+int TSC2046_RegisterEvent(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+    void (*cb)(uint16_t x, uint16_t y)) {
+
+  // if too many events
+  if (registeredEvents >= MAX_EVENTS) {
+    return -1;
+  }
+
+  // complete event structure
+  events[registeredEvents].x = x;
+  events[registeredEvents].y = y;
+  events[registeredEvents].width = w;
+  events[registeredEvents].height = h;
+  events[registeredEvents].cb = cb;
+
+  // update count
+  registeredEvents++;
+  return registeredEvents;
+}
+/**
  * @brief Handler for touchscreen actions.
  *
  * @details Call this function regularly in main to handle
@@ -118,37 +169,33 @@ void TSC2046_Init(void) {
  */
 void TSC2046_Update(void) {
 
-  static uint32_t counter = 0;
+  static uint32_t debounce = 0;
   static uint8_t irqReceived = 0;
   uint16_t x, y;
 
   if (irqReceived == 1) { // init counter
-    counter = TIMER_GetTime();
+    debounce = TIMER_GetTime();
     irqReceived = 2;
   } else if (irqReceived == 2) { // debounce delay
-    if (TIMER_GetTime()- counter >= 20) {
+    if (TIMER_DelayTimer(DEBOUNCE_TIME, debounce)) {
       irqReceived = 3;
+      debounce = TIMER_GetTime();
+      // still down?
       if (!TSC2046_HAL_ReadPenirq()) {
+
         TSC2046_ReadPos(&x, &y);
 
-        // Toggle LED for given region
-        if (y <= 2000) {
-          if (x <= 2000) {
-            LED_Toggle(LED0);
-          } else {
-            LED_Toggle(LED1);
-          }
-        } else {
-          if (x <= 2000) {
-            LED_Toggle(LED1);
-          } else {
-            LED_Toggle(LED0);
+        for (int i = 0; i < registeredEvents; i++) {
+          if ((x > events[i].x) && (x<=events[i].width+events[i].x)
+              && (y > events[i].y) && (y<=events[i].height+events[i].y)) {
+            events[i].cb(x, y);
           }
         }
+
       }
     }
   } else if (irqReceived == 3) { // wait for next measurement
-    if (TIMER_GetTime()- counter >= 100) {
+    if (TIMER_DelayTimer(WAIT_TIME, debounce)) {
       irqReceived = 0;
       penirqAsserted = 0;
     }
