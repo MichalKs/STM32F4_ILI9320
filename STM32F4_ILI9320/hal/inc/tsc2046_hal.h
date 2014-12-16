@@ -1,7 +1,7 @@
 /**
- * @file    tsc2046.h
+ * @file    tsc2046_hal.h
  * @brief	  
- * @date    14 gru 2014
+ * @date    16 gru 2014
  * @author  Michal Ksiezopolski
  *
  *
@@ -15,12 +15,14 @@
  * http://www.gnu.org/licenses/gpl.html
  * @endverbatim
  */
-#ifndef INC_TSC2046_H_
-#define INC_TSC2046_H_
+#ifndef INC_TSC2046_HAL_H_
+#define INC_TSC2046_HAL_H_
 
 #include <inttypes.h>
 
-void TSC2046_Init(void);
-void TSC2046_Update(void);
+void TSC2046_HAL_EnablePenirq(void);
+void TSC2046_HAL_DisablePenirq(void);
+void TSC2046_HAL_PenirqInit(void (*penirqCb)(void));
+uint8_t TSC2046_HAL_ReadPenirq(void);
 
-#endif /* INC_TSC2046_H_ */
+#endif /* INC_TSC2046_HAL_H_ */

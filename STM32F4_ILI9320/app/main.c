@@ -65,8 +65,6 @@ int main(void) {
 	LED_Init(LED1); // Add an LED
 	LED_Init(LED2); // Add an LED
 	LED_Init(LED3); // Add an LED
-	LED_Init(LED5); // Add nonexising LED for test
-	LED_ChangeState(LED5, LED_ON);
 
   uint8_t buf[255]; // buffer for receiving commands from PC
   uint8_t len;      // length of command
@@ -76,32 +74,8 @@ int main(void) {
 
   GRAPH_Init();
 
-  TIMER_Delay(1000);
-
-//  GRAPH_SetColor(0x00, 0xff, 0x00);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  TIMER_Delay(1000);
-//
-//  GRAPH_SetColor(0x00, 0x00, 0xff);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  TIMER_Delay(1000);
-//
-//  GRAPH_SetColor(0xff, 0xff, 0xff);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  TIMER_Delay(1000);
-//
-//  GRAPH_SetColor(0xff, 0xff, 0x00);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  TIMER_Delay(1000);
-
-//  GRAPH_SetColor(0x00, 0x00, 0x00);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  TIMER_Delay(1000);
-
   GRAPH_SetColor(0x00, 0x00, 0xff);
   GRAPH_SetBgColor(0xff, 0x00, 0x00);
-//  GRAPH_DrawRectangle(100, 100, 100, 100);
-//  GRAPH_DrawLine(0, 0, 320, 240);
   GRAPH_DrawBox(100, 100, 100, 100, 5);
   GRAPH_DrawFilledCircle(50, 50, 50);
   GRAPH_SetColor(0xff, 0xff, 0xff);
@@ -115,16 +89,10 @@ int main(void) {
   GRAPH_SetFont(font8x16Info);
   GRAPH_DrawString("To be or not to be", 170, 0);
 
+  // draw image test
 //  TIMER_Delay(3000);
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawImage(30, 30);
-
-//  TIMER_Delay(3000);
-//  GRAPH_ClrScreen(0, 0, 0);
-//  GRAPH_DrawLine(0, 0, 320, 240);
-//  GRAPH_DrawLine(0, 0, 10, 240);
-//  GRAPH_DrawLine(0, 0, 0, 240);
-//  GRAPH_DrawLine(0, 0, 320, 0);
 
   // data for example graph - sinusoidal signal
 //  uint8_t graphData[320];
@@ -143,10 +111,7 @@ int main(void) {
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
-
-  TSC2046_Init();
-  uint32_t counter = 0;
-  uint8_t irqReceived = 0;
+  TSC2046_Init(); // initialize touchscreen
 
 	while (1) {
 
@@ -167,58 +132,14 @@ int main(void) {
 	    if (!strcmp((char*)buf, ":LED0 OFF")) {
 	      LED_ChangeState(LED0, LED_OFF);
 	    }
-      if (!strcmp((char*)buf, ":TSC")) {
-        TSC2046_ReadPos();
-      }
 	  }
-
-	  extern volatile uint8_t flag;
-
-	  if (irqReceived == 1) { // init counter
-	    counter = TIMER_GetTime();
-	    irqReceived = 2;
-	  } else if (irqReceived == 2) { // debounce delay
-	    if (TIMER_GetTime()- counter >= 20) {
-	      irqReceived = 3;
-	      if (!GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1)) {
-          uint16_t result = TSC2046_ReadPos();
-          if (result <= 1700) {
-            LED_ChangeState(LED1, LED_ON);
-          }
-          if (result > 1700) {
-            LED_ChangeState(LED1, LED_OFF);
-          }
-	      }
-	    }
-	  } else if (irqReceived == 3) { // wait for next measurement
-      if (TIMER_GetTime()- counter >= 100) {
-        irqReceived = 0;
-        flag = 0;
-      }
-	  } else if (flag) { // irq received
-	    irqReceived = 1;
-	  }
-
+	  TSC2046_Update(); // run touchscreen functions
 		TIMER_SoftTimersUpdate(); // run timers
 	}
 }
-
 /**
  * @brief Callback function called on every soft timer overflow
  */
 void softTimerCallback(void) {
-//  TSC2046_ReadPos();
   LED_Toggle(LED0); // Toggle LED
-//  println("Test string sent from STM32F4!!!"); // Print test string
-//  GRAPH_SetColor(0x00, 0x00, 0x00);
-//  GRAPH_DrawRectangle(0, 0, 320, 240);
-//  GRAPH_SetColor(0x00, 0x00, 0xff);
-//
-//  static int x; // for moving rectangle
-//  GRAPH_DrawRectangle(x, 100, 50, 50);
-//  x += 30;
-//  if (x > 270) {
-//    x = 0;
-//  }
-
 }

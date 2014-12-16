@@ -19,9 +19,11 @@
 
 #include <tsc2046.h>
 #include <spi1.h>
+#include <tsc2046_hal.h>
 #include <utils.h>
 #include <stdio.h>
-#include <stm32f4xx.h>
+#include <led.h>
+#include <timers.h>
 
 #define DEBUG
 
@@ -46,7 +48,6 @@
 #define MEASURE_AUX     0b110
 #define MEASURE_TEMP1   0b111
 
-
 /**
  * @brief Control byte
  *
@@ -59,22 +60,83 @@
 typedef union {
   struct {
     uint8_t powerDown :2;
-    uint8_t channelSelect :3;
-    uint8_t mode: 1;
     uint8_t serDfr :1;
+    uint8_t mode: 1;
+    uint8_t channelSelect :3;
     uint8_t startBit :1;
   } bits;
   uint8_t byte;
 } ControlByteTypedef;
+
+static uint8_t penirqAsserted;
+
+static void penirqCallback(void);
+uint16_t TSC2046_ReadPos(void);
 
 /**
  * @brief Initialize the touchscreen library.
  */
 void TSC2046_Init(void) {
 
+  // initialize SPI interface
   SPI1_Init();
+  // initialize PENIRQ signal handling
+  TSC2046_HAL_PenirqInit(penirqCallback);
+
+  // send first commands
+  // with 2 LSB bits = 0 to enable PENIRQ
+  SPI1_Select();
+  SPI1_Transmit(0b10010000);
+  SPI1_Transmit(0);
+  SPI1_Transmit(0);
+  SPI1_Deselect();
+}
+/**
+ * @brief Handler for touchscreen actions.
+ *
+ * @details Call this function regularly in main to handle
+ * touchscreen events.
+ */
+void TSC2046_Update(void) {
+
+  static uint32_t counter = 0;
+  static uint8_t irqReceived = 0;
+
+  if (irqReceived == 1) { // init counter
+    counter = TIMER_GetTime();
+    irqReceived = 2;
+  } else if (irqReceived == 2) { // debounce delay
+    if (TIMER_GetTime()- counter >= 20) {
+      irqReceived = 3;
+      if (!TSC2046_HAL_ReadPenirq()) {
+        uint16_t result = TSC2046_ReadPos();
+        if (result <= 1700) {
+          LED_ChangeState(LED1, LED_ON);
+        }
+        if (result > 1700) {
+          LED_ChangeState(LED1, LED_OFF);
+        }
+      }
+    }
+  } else if (irqReceived == 3) { // wait for next measurement
+    if (TIMER_GetTime()- counter >= 100) {
+      irqReceived = 0;
+      penirqAsserted = 0;
+    }
+  } else if (penirqAsserted) { // irq received
+    irqReceived = 1;
+  }
 
 }
+/**
+ * @brief Callback function called by lower layer whenever
+ * PENIRQ signal is asserted. This signalized that the
+ * touchscreen was pressed.
+ */
+static void penirqCallback(void) {
+  penirqAsserted = 1;
+}
+
 /**
  * @brief Read position
  * FIXME This is just a test function for now.
@@ -82,27 +144,36 @@ void TSC2046_Init(void) {
  */
 uint16_t TSC2046_ReadPos(void) {
 
-  NVIC_DisableIRQ(EXTI1_IRQn);
+  TSC2046_HAL_DisablePenirq();
 
   SPI1_Select();
-  uint8_t buf[3];
+  uint8_t buf[20];
   uint8_t* ptr = buf;
 
   *ptr++ = SPI1_Transmit(0b10010000);
-  *ptr++ = SPI1_Transmit(0xff);
-  *ptr++ = SPI1_Transmit(0xff);
+  *ptr++ = SPI1_Transmit(0);
+  *ptr++ = SPI1_Transmit(0);
 
-  uint16_t result = buf[2]|((uint16_t)buf[1]<<8);
+  *ptr++ = SPI1_Transmit(0b11010000);
+  *ptr++ = SPI1_Transmit(0);
+  *ptr++ = SPI1_Transmit(0);
 
-  result>>=3;
+  uint16_t x = 0, y = 0;
+  y = buf[2]|((uint16_t)buf[1]<<8);
 
-  println("Data from TSC: %u", result);
+  y>>=3;
+
+  x = buf[5]|((uint16_t)buf[4]<<8);
+
+  x>>=3;
+
+  println("Data from TSC: x=%u y=%u", x, y);
 //  hexdump(buf, 3);
 
   SPI1_Deselect();
-  EXTI_ClearITPendingBit(EXTI_Line1);
-  NVIC_EnableIRQ(EXTI1_IRQn);
 
-  return result;
+  TSC2046_HAL_EnablePenirq();
+
+  return y;
 
 }

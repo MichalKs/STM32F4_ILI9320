@@ -25,42 +25,8 @@
 
 /**
  * @brief Initialize SPI1 and SS pin.
- * TODO Make function for PENIRQ outside SPI
  */
 void SPI1_Init(void) {
-
-  GPIO_InitTypeDef GPIO_InitStructure;
-  EXTI_InitTypeDef EXTI_InitStructure;
-  NVIC_InitTypeDef NVIC_InitStructure;
-
-  /* Enable the PENIRQ Clock */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-
-  /* Configure PENIRQ pin as input */
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-
-  /* Connect Button EXTI Line to PENIRQ GPIO Pin */
-  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource1);
-
-  /* Configure PENIRQ EXTI line */
-  EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-  EXTI_Init(&EXTI_InitStructure);
-
-  /* Enable and set PENIRQ EXTI Interrupt to the lowest priority */
-  NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn ;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-
-  NVIC_Init(&NVIC_InitStructure);
 
   // Enable GPIO clock for SPI pins
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
@@ -188,17 +154,6 @@ void SPI1_TransmitBuffer(uint8_t* rx_buf, uint8_t* tx_buf, uint32_t len) {
     tx_buf++;
     rx_buf++;
   }
-}
-
-volatile uint8_t flag; // TODO Don't use global var => use callback
-
-void EXTI1_IRQHandler(void) {
-
-  if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
-    EXTI_ClearITPendingBit(EXTI_Line1);
-    flag = 1;
-  }
-
 }
 
 /**
