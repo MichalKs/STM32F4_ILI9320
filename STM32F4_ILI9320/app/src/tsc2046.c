@@ -16,7 +16,6 @@
  * @endverbatim
  */
 
-
 #include <tsc2046.h>
 #include <spi1.h>
 #include <tsc2046_hal.h>
@@ -35,7 +34,6 @@
 #define println(str, args...) (void)0
 #endif
 
-
 /*
  * Settings of the analog input pins
  */
@@ -47,6 +45,17 @@
 #define MEASURE_X       0b101
 #define MEASURE_AUX     0b110
 #define MEASURE_TEMP1   0b111
+
+#define MODE_8BIT   1
+#define MODE_12BIT  0
+
+#define SINGLE_ENDED 1
+#define DIFFERENTIAL 0
+
+#define PD_POWER_DOWN 0b00
+#define PD_VREF_OFF   0b01
+#define PD_ADC_OFF    0b10
+#define PD_ALWAYS_ON  0b11
 
 /**
  * @brief Control byte
@@ -68,10 +77,10 @@ typedef union {
   uint8_t byte;
 } ControlByteTypedef;
 
-static uint8_t penirqAsserted;
+static uint8_t penirqAsserted; ///< Is PENIRQ low?
 
 static void penirqCallback(void);
-uint16_t TSC2046_ReadPos(void);
+void TSC2046_ReadPos(uint16_t *x, uint16_t *y);
 
 /**
  * @brief Initialize the touchscreen library.
@@ -85,8 +94,16 @@ void TSC2046_Init(void) {
 
   // send first commands
   // with 2 LSB bits = 0 to enable PENIRQ
+
+  ControlByteTypedef ctrl;
+  ctrl.bits.startBit = 1;
+  ctrl.bits.serDfr = DIFFERENTIAL;
+  ctrl.bits.mode = MODE_12BIT;
+  ctrl.bits.powerDown = PD_POWER_DOWN;
+  ctrl.bits.channelSelect = MEASURE_X;
+
   SPI1_Select();
-  SPI1_Transmit(0b10010000);
+  SPI1_Transmit(ctrl.byte);
   SPI1_Transmit(0);
   SPI1_Transmit(0);
   SPI1_Deselect();
@@ -96,11 +113,14 @@ void TSC2046_Init(void) {
  *
  * @details Call this function regularly in main to handle
  * touchscreen events.
+ *
+ * FIXME Just test for now
  */
 void TSC2046_Update(void) {
 
   static uint32_t counter = 0;
   static uint8_t irqReceived = 0;
+  uint16_t x, y;
 
   if (irqReceived == 1) { // init counter
     counter = TIMER_GetTime();
@@ -109,12 +129,21 @@ void TSC2046_Update(void) {
     if (TIMER_GetTime()- counter >= 20) {
       irqReceived = 3;
       if (!TSC2046_HAL_ReadPenirq()) {
-        uint16_t result = TSC2046_ReadPos();
-        if (result <= 1700) {
-          LED_ChangeState(LED1, LED_ON);
-        }
-        if (result > 1700) {
-          LED_ChangeState(LED1, LED_OFF);
+        TSC2046_ReadPos(&x, &y);
+
+        // Toggle LED for given region
+        if (y <= 2000) {
+          if (x <= 2000) {
+            LED_Toggle(LED0);
+          } else {
+            LED_Toggle(LED1);
+          }
+        } else {
+          if (x <= 2000) {
+            LED_Toggle(LED1);
+          } else {
+            LED_Toggle(LED0);
+          }
         }
       }
     }
@@ -129,51 +158,52 @@ void TSC2046_Update(void) {
 
 }
 /**
+ * @brief Read X and Y position on touchscreen.
+ * @param x Pointer to store X coordinate.
+ * @param y Pointer to store Y coordinate.
+ */
+void TSC2046_ReadPos(uint16_t *x, uint16_t *y) {
+
+  TSC2046_HAL_DisablePenirq(); // disable IRQ during read
+  SPI1_Select();
+
+  // control byte
+  ControlByteTypedef ctrl;
+  ctrl.bits.startBit = 1;
+  ctrl.bits.serDfr = DIFFERENTIAL;
+  ctrl.bits.mode = MODE_12BIT;
+  ctrl.bits.powerDown = PD_POWER_DOWN;
+  ctrl.bits.channelSelect = MEASURE_Y;
+
+  uint16_t tmpX, tmpY;
+
+  // read Y
+  SPI1_Transmit(ctrl.byte);
+  tmpY = ((uint16_t)SPI1_Transmit(0))<<8;
+  tmpY |= SPI1_Transmit(0);
+
+  ctrl.bits.channelSelect = MEASURE_X;
+
+  // read X
+  SPI1_Transmit(ctrl.byte);
+  tmpX = ((uint16_t)SPI1_Transmit(0))<<8;
+  tmpX |= SPI1_Transmit(0);
+
+  *y = tmpY >> 3;
+  *x = tmpX >> 3;
+
+  println("Data from TSC: x=%u y=%u", *x, *y);
+
+  SPI1_Deselect();
+  TSC2046_HAL_EnablePenirq(); // reenable IRQ
+
+}
+
+/**
  * @brief Callback function called by lower layer whenever
  * PENIRQ signal is asserted. This signalized that the
  * touchscreen was pressed.
  */
 static void penirqCallback(void) {
   penirqAsserted = 1;
-}
-
-/**
- * @brief Read position
- * FIXME This is just a test function for now.
- * TODO Place low level stuff in HAL
- */
-uint16_t TSC2046_ReadPos(void) {
-
-  TSC2046_HAL_DisablePenirq();
-
-  SPI1_Select();
-  uint8_t buf[20];
-  uint8_t* ptr = buf;
-
-  *ptr++ = SPI1_Transmit(0b10010000);
-  *ptr++ = SPI1_Transmit(0);
-  *ptr++ = SPI1_Transmit(0);
-
-  *ptr++ = SPI1_Transmit(0b11010000);
-  *ptr++ = SPI1_Transmit(0);
-  *ptr++ = SPI1_Transmit(0);
-
-  uint16_t x = 0, y = 0;
-  y = buf[2]|((uint16_t)buf[1]<<8);
-
-  y>>=3;
-
-  x = buf[5]|((uint16_t)buf[4]<<8);
-
-  x>>=3;
-
-  println("Data from TSC: x=%u y=%u", x, y);
-//  hexdump(buf, 3);
-
-  SPI1_Deselect();
-
-  TSC2046_HAL_EnablePenirq();
-
-  return y;
-
 }

@@ -141,5 +141,5 @@ int main(void) {
  * @brief Callback function called on every soft timer overflow
  */
 void softTimerCallback(void) {
-  LED_Toggle(LED0); // Toggle LED
+//  LED_Toggle(LED0); // Toggle LED
 }
