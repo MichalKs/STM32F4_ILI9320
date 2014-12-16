@@ -29,7 +29,7 @@
 #include <font_10x20.h>
 #include <font_8x16.h>
 #include <tsc2046.h>
-#include <stm32f4xx.h>
+#include <gui.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -115,7 +115,13 @@ int main(void) {
 
   TSC2046_Init(); // initialize touchscreen
   // register an event for a given region
-  TSC2046_RegisterEvent(0, 0, 2000, 2000, tscEvent1);
+//  TSC2046_RegisterEvent(0, 0, 1500, 4000, tscEvent1);
+//  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
+
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GUI_AddButton(50, 50, 50, 100, tscEvent1, "LED 0");
+  GUI_AddButton(200, 50, 50, 100, tscEvent2, "LED 1");
 
 	while (1) {
 
@@ -147,7 +153,19 @@ int main(void) {
 void softTimerCallback(void) {
 //  LED_Toggle(LED0); // Toggle LED
 }
-
+/**
+ * @brief Example touchscreen event handler.
+ * @param x X coordinate of touch.
+ * @param y Y coordinate of touch.
+ */
 void tscEvent1(uint16_t x, uint16_t y) {
   LED_Toggle(LED0);
+}
+/**
+ * @brief Example touchscreen event handler.
+ * @param x X coordinate of touch.
+ * @param y Y coordinate of touch.
+ */
+void tscEvent2(uint16_t x, uint16_t y) {
+  LED_Toggle(LED1);
 }
