@@ -30,6 +30,8 @@
 #include <font_8x16.h>
 #include <tsc2046.h>
 #include <gui.h>
+#include <fat.h>
+#include <sdcard.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -117,6 +119,8 @@ int main(void) {
   // register an event for a given region
 //  TSC2046_RegisterEvent(0, 0, 1500, 4000, tscEvent1);
 //  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
+
+  FAT_Init(SD_Init, SD_ReadSectors, SD_WriteSectors);
 
   GUI_Init();
 

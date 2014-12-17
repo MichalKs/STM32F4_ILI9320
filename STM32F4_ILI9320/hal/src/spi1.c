@@ -27,7 +27,6 @@
  * @brief Initialize SPI1 and SS pin.
  */
 void SPI1_Init(void) {
-
   // Enable GPIO clock for SPI pins
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
@@ -36,6 +35,7 @@ void SPI1_Init(void) {
    * PA5 = SCK
    * PA6 = MISO
    * PA7 = MOSI
+   * PA4 = SS
    */
   GPIO_InitTypeDef GPIO_InitStruct;
   GPIO_InitStruct.GPIO_Pin    = GPIO_Pin_7 | GPIO_Pin_6 | GPIO_Pin_5;
