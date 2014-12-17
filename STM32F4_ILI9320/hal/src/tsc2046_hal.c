@@ -34,28 +34,28 @@ void TSC2046_HAL_PenirqInit(void (*penirqCb)(void)) {
   NVIC_InitTypeDef NVIC_InitStructure;
 
   /* Enable the PENIRQ Clock */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
   /* Configure PENIRQ pin as input */
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+  GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 
   /* Connect Button EXTI Line to PENIRQ GPIO Pin */
-  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource1);
+  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOD, EXTI_PinSource2);
 
   /* Configure PENIRQ EXTI line */
-  EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+  EXTI_InitStructure.EXTI_Line = EXTI_Line2;
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
 
   /* Enable and set PENIRQ EXTI Interrupt to the lowest priority */
-  NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn ;
+  NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn ;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -64,31 +64,31 @@ void TSC2046_HAL_PenirqInit(void (*penirqCb)(void)) {
 }
 
 uint8_t TSC2046_HAL_ReadPenirq(void) {
-  return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1);
+  return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2);
 }
 
 /**
  * @brief Clear PENIRQ flag and enable PENIRQ interrupt.
  */
 void TSC2046_HAL_EnablePenirq(void) {
-  EXTI_ClearITPendingBit(EXTI_Line1);
-  NVIC_EnableIRQ(EXTI1_IRQn);
+  EXTI_ClearITPendingBit(EXTI_Line2);
+  NVIC_EnableIRQ(EXTI2_IRQn);
 }
 /**
  * @brief Disable PENIRQ interrupt.
  */
 void TSC2046_HAL_DisablePenirq(void) {
-  NVIC_DisableIRQ(EXTI1_IRQn);
+  NVIC_DisableIRQ(EXTI2_IRQn);
 }
 /**
  * @brief Handler for PENIRQ interrupt.
  */
-void EXTI1_IRQHandler(void) {
+void EXTI2_IRQHandler(void) {
 
-  if (EXTI_GetITStatus(EXTI_Line1) != RESET) {
+  if (EXTI_GetITStatus(EXTI_Line2) != RESET) {
 
     penirqCallback();
-    EXTI_ClearITPendingBit(EXTI_Line1);
+    EXTI_ClearITPendingBit(EXTI_Line2);
 
   }
 

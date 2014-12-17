@@ -19,6 +19,52 @@
 
 #include <graphics.h>
 #include <tsc2046.h>
+#include <font_8x16.h>
+
+
+static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *h);
+
+/**
+ * @brief Initialize GUI.
+ */
+void GUI_Init(void) {
+
+  TSC2046_Init(); // initialize touchscreen
+  GRAPH_Init();
+  GRAPH_SetColor(0xff, 0xff, 0x00);
+  GRAPH_SetBgColor(0xff, 0x00, 0x00);
+  GRAPH_SetFont(font8x16Info);
+}
+
+
+/**
+ * @brief Adds a button to the GUI.
+ *
+ * @details All coordinates as per LCD (not TSC).
+ *
+ * @param x X coordinate of button origin.
+ * @param y Y coordinate of button origin.
+ * @param w Width of button
+ * @param h Height of button
+ * @param cb Callback for button press event.
+ * @param text Description of button (shown on screen).
+ */
+void GUI_AddButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+    void (*cb)(uint16_t x, uint16_t y), const char* text) {
+
+  GRAPH_DrawRectangle(x,y,w,h);
+  GRAPH_DrawString(text, x+w/4, y+h/4);
+
+  GUI_ConvertLCD2TSC(&x, &y, &w, &h);
+
+  TSC2046_RegisterEvent(x, y, w, h, cb);
+
+}
+
+void GUI_AddLabel(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+    const char* text) {
+
+}
 
 /**
  * @brief Converts LCD coordinates (320x240) to TSC coordinates.
@@ -69,26 +115,3 @@ static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *
 
 }
 
-/**
- * @brief Adds a button to the GUI.
- *
- * @details All coordinates as per LCD (not TSC).
- *
- * @param x X coordinate of button origin.
- * @param y Y coordinate of button origin.
- * @param w Width of button
- * @param h Height of button
- * @param cb Callback for button press event.
- * @param text Description of button (shown on screen).
- */
-void GUI_AddButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
-    void (*cb)(uint16_t x, uint16_t y), char* text) {
-
-  GRAPH_DrawRectangle(x,y,w,h);
-  GRAPH_DrawString(text, x+w/4, y+h/4);
-
-  GUI_ConvertLCD2TSC(&x, &y, &w, &h);
-
-  TSC2046_RegisterEvent(x, y, w, h, cb);
-
-}

@@ -19,6 +19,7 @@
 #define INC_GUI_H_
 
 void GUI_AddButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
-    void (*cb)(uint16_t x, uint16_t y), char* text);
+    void (*cb)(uint16_t x, uint16_t y), const char* text);
+void GUI_Init(void);
 
 #endif /* INC_GUI_H_ */

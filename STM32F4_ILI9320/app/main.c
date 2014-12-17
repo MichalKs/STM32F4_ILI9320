@@ -74,22 +74,22 @@ int main(void) {
   // test another way of measuring time delays
   uint32_t softTimer = TIMER_GetTime(); // get start time for delay
 
-  GRAPH_Init();
+//  GRAPH_Init();
 
-  GRAPH_SetColor(0x00, 0x00, 0xff);
-  GRAPH_SetBgColor(0xff, 0x00, 0x00);
-  GRAPH_DrawBox(100, 100, 100, 100, 5);
-  GRAPH_DrawFilledCircle(50, 50, 50);
-  GRAPH_SetColor(0xff, 0xff, 0xff);
-  GRAPH_SetFont(font21x39Info);
-  GRAPH_DrawChar('A', 120, 50);
-  GRAPH_DrawString("Hello World", 200, 0);
-  GRAPH_SetFont(font14x27Info);
-  GRAPH_DrawString("A mouse is", 240, 0);
-  GRAPH_SetFont(font10x20Info);
-  GRAPH_DrawString("not a lion.", 280, 0);
-  GRAPH_SetFont(font8x16Info);
-  GRAPH_DrawString("To be or not to be", 170, 0);
+//  GRAPH_SetColor(0x00, 0x00, 0xff);
+//  GRAPH_SetBgColor(0xff, 0x00, 0x00);
+//  GRAPH_DrawBox(100, 100, 100, 100, 5);
+//  GRAPH_DrawFilledCircle(50, 50, 50);
+//  GRAPH_SetColor(0xff, 0xff, 0xff);
+//  GRAPH_SetFont(font21x39Info);
+//  GRAPH_DrawChar('A', 120, 50);
+//  GRAPH_DrawString("Hello World", 200, 0);
+//  GRAPH_SetFont(font14x27Info);
+//  GRAPH_DrawString("A mouse is", 240, 0);
+//  GRAPH_SetFont(font10x20Info);
+//  GRAPH_DrawString("not a lion.", 280, 0);
+//  GRAPH_SetFont(font8x16Info);
+//  GRAPH_DrawString("To be or not to be", 170, 0);
 
   // draw image test
 //  TIMER_Delay(3000);
@@ -113,13 +113,13 @@ int main(void) {
 //  GRAPH_ClrScreen(0, 0, 0);
 //  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
-  TSC2046_Init(); // initialize touchscreen
+
   // register an event for a given region
 //  TSC2046_RegisterEvent(0, 0, 1500, 4000, tscEvent1);
 //  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
 
-  TIMER_Delay(3000);
-  GRAPH_ClrScreen(0, 0, 0);
+  GUI_Init();
+
   GUI_AddButton(50, 50, 50, 100, tscEvent1, "LED 0");
   GUI_AddButton(200, 50, 50, 100, tscEvent2, "LED 1");
 

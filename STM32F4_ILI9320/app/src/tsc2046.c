@@ -17,7 +17,7 @@
  */
 
 #include <tsc2046.h>
-#include <spi1.h>
+#include <spi3.h>
 #include <tsc2046_hal.h>
 #include <utils.h>
 #include <stdio.h>
@@ -109,7 +109,7 @@ void TSC2046_ReadPos(uint16_t *x, uint16_t *y);
 void TSC2046_Init(void) {
 
   // initialize SPI interface
-  SPI1_Init();
+  SPI3_Init();
   // initialize PENIRQ signal handling
   TSC2046_HAL_PenirqInit(penirqCallback);
 
@@ -123,11 +123,11 @@ void TSC2046_Init(void) {
   ctrl.bits.powerDown = PD_POWER_DOWN;
   ctrl.bits.channelSelect = MEASURE_X;
 
-  SPI1_Select();
-  SPI1_Transmit(ctrl.byte);
-  SPI1_Transmit(0);
-  SPI1_Transmit(0);
-  SPI1_Deselect();
+  SPI3_Select();
+  SPI3_Transmit(ctrl.byte);
+  SPI3_Transmit(0);
+  SPI3_Transmit(0);
+  SPI3_Deselect();
 }
 /**
  * @brief Registers a given region of the touchscreen
@@ -212,7 +212,7 @@ void TSC2046_Update(void) {
 void TSC2046_ReadPos(uint16_t *x, uint16_t *y) {
 
   TSC2046_HAL_DisablePenirq(); // disable IRQ during read
-  SPI1_Select();
+  SPI3_Select();
 
   // control byte
   ControlByteTypedef ctrl;
@@ -225,23 +225,23 @@ void TSC2046_ReadPos(uint16_t *x, uint16_t *y) {
   uint16_t tmpX, tmpY;
 
   // read Y
-  SPI1_Transmit(ctrl.byte);
-  tmpY = ((uint16_t)SPI1_Transmit(0))<<8;
-  tmpY |= SPI1_Transmit(0);
+  SPI3_Transmit(ctrl.byte);
+  tmpY = ((uint16_t)SPI3_Transmit(0))<<8;
+  tmpY |= SPI3_Transmit(0);
 
   ctrl.bits.channelSelect = MEASURE_X;
 
   // read X
-  SPI1_Transmit(ctrl.byte);
-  tmpX = ((uint16_t)SPI1_Transmit(0))<<8;
-  tmpX |= SPI1_Transmit(0);
+  SPI3_Transmit(ctrl.byte);
+  tmpX = ((uint16_t)SPI3_Transmit(0))<<8;
+  tmpX |= SPI3_Transmit(0);
 
   *y = tmpY >> 3;
   *x = tmpX >> 3;
 
   println("Data from TSC: x=%u y=%u", *x, *y);
 
-  SPI1_Deselect();
+  SPI3_Deselect();
   TSC2046_HAL_EnablePenirq(); // reenable IRQ
 
 }
