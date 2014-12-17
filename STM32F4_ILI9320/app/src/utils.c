@@ -53,6 +53,37 @@ void hexdump(const uint8_t const *buf, uint32_t length) {
 }
 
 /**
+ * @brief Send data in hex and ASCII format to terminal.
+ * @param buf Data buffer.
+ * @param length Number of bytes to send.
+ * @warning Uses blocking delays so as not to overflow buffer.
+ */
+void hexdumpC(const uint8_t const *buf, uint32_t length) {
+
+  uint32_t i = 0;
+
+  while (length--) {
+
+    if (buf[i]>=' ' && buf[i] <= 'z') {
+      printf("%02x %c ", buf[i], buf[i]);
+    } else { // nonalphanumeric as dot
+      printf("%02x %c ", buf[i], '.');
+    }
+
+    i++;
+    // new line every 16 chars
+    if ((i % 8) == 0) {
+      printf("\r\n");
+    }
+    // delay every 50 chars
+    if ((i % 50) == 0) {
+//      TIMER_Delay(100); // Delay so as not to overflow buffer
+    }
+  }
+  printf("\r\n");
+}
+
+/**
  * @}
  */
 

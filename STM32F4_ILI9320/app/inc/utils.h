@@ -31,6 +31,7 @@
  */
 
 void hexdump(const uint8_t* buf, uint32_t length);
+void hexdumpC(const uint8_t const *buf, uint32_t length);
 
 /**
  * @}

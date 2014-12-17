@@ -24,4 +24,7 @@ int8_t FAT_Init(void (*phyInit)(void),
     uint8_t (*phyReadSectors)(uint8_t* buf, uint32_t sector, uint32_t count),
     uint8_t (*phyWriteSectors)(uint8_t* buf, uint32_t sector, uint32_t count));
 
+int FAT_OpenFile(const char* filename);
+int FAT_ReadFile(int file, uint8_t* data, int count);
+
 #endif /* FAT_H_ */

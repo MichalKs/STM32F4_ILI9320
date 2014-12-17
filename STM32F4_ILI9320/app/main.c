@@ -32,6 +32,7 @@
 #include <gui.h>
 #include <fat.h>
 #include <sdcard.h>
+#include <utils.h>
 
 #define SYSTICK_FREQ 1000 ///< Frequency of the SysTick set at 1kHz.
 #define COMM_BAUD_RATE 115200UL ///< Baud rate for communication with PC
@@ -121,6 +122,11 @@ int main(void) {
 //  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
 
   FAT_Init(SD_Init, SD_ReadSectors, SD_WriteSectors);
+  int id = FAT_OpenFile("HELLO   TXT");
+  uint8_t data[50];
+
+  int i = FAT_ReadFile(id, data, 30);
+  hexdumpC(data, i);
 
   GUI_Init();
 
