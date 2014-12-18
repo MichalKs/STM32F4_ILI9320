@@ -58,7 +58,8 @@ void tscEvent2(uint16_t x, uint16_t y);
 int main(void) {
 	
   COMM_Init(COMM_BAUD_RATE); // initialize communication with PC
-  println("Starting program"); // Print a string to terminal
+  // Print a string to terminal
+  println("Starting program*********************************************");
 
 	TIMER_Init(SYSTICK_FREQ); // Initialize timer
 
@@ -125,7 +126,8 @@ int main(void) {
   int id = FAT_OpenFile("HELLO   TXT");
   uint8_t data[50];
 
-  int i = FAT_ReadFile(id, data, 30);
+  int i = FAT_ReadFile(id, data, 5);
+  i += FAT_ReadFile(id, data+i, 10);
   hexdumpC(data, i);
 
   GUI_Init();

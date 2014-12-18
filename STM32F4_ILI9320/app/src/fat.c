@@ -258,7 +258,7 @@ int8_t FAT_Init(void (*phyInit)(void),
     println("Invalid disk signature %04x", mbr->signature);
     return -1;
   }
-  println("Valid disk signature");
+  println("Found valid disk signature");
 
   // dump partition table
 //  hexdump((uint8_t*)mbr->partitionTable, sizeof(FAT_PartitionTableEntry)*4);
@@ -295,19 +295,19 @@ int8_t FAT_Init(void (*phyInit)(void),
     return -2;
   }
 
-  println("Valid partition signature");
+  println("Found valid partition signature");
 
   // We already have length from partition table, so just display
-  println("Partition size is %d", (unsigned int)bootSector->totalSectors32);
+//  println("Partition size is %d", (unsigned int)bootSector->totalSectors32);
 
   if (bootSector->totalSectors32 != mountedDisks[0].partitionInfo[0].length) {
     println("Error: Wrong partition size");
     while(1);
   }
   // reserved sectors are the sectors before the FAT including boot sector
-  println("Reserved sectors = %d", (unsigned int)bootSector->reservedSectors);
+//  println("Reserved sectors = %d", (unsigned int)bootSector->reservedSectors);
 
-  println("Bytes per sector %d", (unsigned int)bootSector->bytesPerSector);
+//  println("Bytes per sector %d", (unsigned int)bootSector->bytesPerSector);
 
   if (bootSector->bytesPerSector != 512) {
     // TODO Make library sector length independent
@@ -315,15 +315,15 @@ int8_t FAT_Init(void (*phyInit)(void),
     while(1);
   }
   // hidden sectors are the sectors on disk preceding partition
-  println("Hidden sectors %d", (unsigned int)bootSector->hiddenSectors);
+//  println("Hidden sectors %d", (unsigned int)bootSector->hiddenSectors);
   println("Sectors per cluster =  %d", (unsigned int)bootSector->sectorsPerCluster);
   println("Number of FATs =  %d", (unsigned int)bootSector->numberOfFATs);
   println("Sectors per FAT =  %d", (unsigned int)bootSector->sectorsPerFAT32);
 
   // The cluster where the root directory is at
   println("Root cluster = %d", (unsigned int)bootSector->rootCluster);
-  println("FSInfo structure is at sector %d", (unsigned int)bootSector->fsInfo);
-  println("Backup boot sector is at sector %d", (unsigned int)bootSector->backupBootSector);
+//  println("FSInfo structure is at sector %d", (unsigned int)bootSector->fsInfo);
+//  println("Backup boot sector is at sector %d", (unsigned int)bootSector->backupBootSector);
 
 
   // Sector on disk where FAT is (from start of disk)
@@ -366,11 +366,16 @@ int8_t FAT_Init(void (*phyInit)(void),
  * @brief Opens a file.
  * @param filename Name of file
  * @return ID of file
+ *
+ * TODO Add parsing paths.
+ * TODO Add long filenames
  */
 int FAT_OpenFile(const char* filename) {
 
   FAT_File file;
   strcpy(file.filename, filename);
+  println("Opening file %s", filename);
+
   int id = FAT_FindFile(&file);
 
   if (id != -1) {
@@ -386,25 +391,46 @@ int FAT_OpenFile(const char* filename) {
  * @param data Buffer for storing data
  * @param count Number of bytes to read
  * @return Number of bytes read or -1 for EOF
+ * TODO Also read next clusters
  */
 int FAT_ReadFile(int file, uint8_t* data, int count) {
 
+  // File not opened
   if (openedFiles[file].id == -1) {
     return -1; // EOF for not open file
   }
+  // We have already reached EOF
+  if (openedFiles[file].rdPtr > openedFiles[file].fileSize) {
+    println("EOF reached");
+    return -1;
+  }
 
-  int len = 0;
+  int len = 0; // number of bytes read
+
+  // jump to sector where read pointer is at (counting from first sector)
+  uint32_t sectorOffset = openedFiles[file].rdPtr / 512;
+
+  // which cluster from start cluster is the sector at
+  uint32_t clusterOffset = sectorOffset/
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+  // sector to read in the cluster
+  sectorOffset = sectorOffset %
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+
+  // TODO Add function for finding cluster X of file
+  // FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset);
 
   uint32_t cluster = openedFiles[file].firstCluster;
   uint32_t sector = FAT_Cluster2Sector(cluster);
 
-  // FIXME Read other sectors as well
+//  sector += sectorOffset;
+
   phyCallbacks.phyReadSectors(buf, sector, 1);
 
 //  FAT_GetEntryInFAT(cluster);
 
-  // start getting data from read pointer
-  uint8_t* ptr = buf + openedFiles[file].rdPtr;
+  // start getting data from read pointer (in the current sector)
+  uint8_t* ptr = buf + openedFiles[file].rdPtr % 512;
 
   for (int i = 0; i < count; i++) {
 
@@ -478,6 +504,8 @@ static uint32_t FAT_GetEntryInFAT(uint32_t cluster) {
  * TODO Search for files also in subdirectories of the root directory.
  */
 static int FAT_FindFile(FAT_File* file) {
+
+  println("Searching for file %s", file->filename);
 
   uint32_t i = 0, j = 0, k = 0;
 

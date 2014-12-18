@@ -243,11 +243,11 @@ void SD_Init(void) {
   }
 
   // Send OCR to terminal
-  print("OCR value: ");
-  for (i=0; i<4; i++) {
-    print("%02x ", buf[i]);
-  }
-  print("\r\n");
+//  print("OCR value: ");
+//  for (i=0; i<4; i++) {
+//    print("%02x ", buf[i]);
+//  }
+//  print("\r\n");
 
   // Send ACMD41 until card goes out of IDLE state
   for (i=0; i<10; i++) {
@@ -277,11 +277,11 @@ void SD_Init(void) {
   }
 
   // Send OCR to terminal
-  print("OCR value: ");
-  for (i=0; i<4; i++) {
-    print("%02x ", buf[i]);
-  }
-  print("\r\n");
+//  print("OCR value: ");
+//  for (i=0; i<4; i++) {
+//    print("%02x ", buf[i]);
+//  }
+//  print("\r\n");
 
   // check capacity
   if (buf[0] & 0x40) {
@@ -405,7 +405,7 @@ static uint8_t SD_SendCommand(uint8_t cmd, uint32_t args) {
   // So, we send a dummy byte first.
   SD_HAL_TransmitData(0xff);
   uint8_t ret = SD_HAL_TransmitData(0xff);
-  println("Response to cmd %d is %02x", cmd, ret);
+//  println("Response to cmd %d is %02x", cmd, ret);
 
   return ret;
 }
