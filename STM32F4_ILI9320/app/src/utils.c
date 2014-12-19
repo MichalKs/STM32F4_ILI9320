@@ -64,7 +64,7 @@ void hexdumpC(const uint8_t const *buf, uint32_t length) {
 
   while (length--) {
 
-    if (buf[i]>=' ' && buf[i] <= 'z') {
+    if (buf[i]>=' ' && buf[i] <= '~') {
       printf("%02x %c ", buf[i], buf[i]);
     } else { // nonalphanumeric as dot
       printf("%02x %c ", buf[i], '.');

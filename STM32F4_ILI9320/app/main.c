@@ -130,6 +130,14 @@ int main(void) {
   i += FAT_ReadFile(id, data+i, 10);
   hexdumpC(data, i);
 
+  id = FAT_OpenFile("HAMLET  TXT");
+
+  FAT_MoveRdPtr(id, 100);
+
+  i = FAT_ReadFile(id, data, 5);
+  i += FAT_ReadFile(id, data+i, 10);
+  hexdumpC(data, i);
+
   GUI_Init();
 
   GUI_AddButton(50, 50, 50, 100, tscEvent1, "LED 0");

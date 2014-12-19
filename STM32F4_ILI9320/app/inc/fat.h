@@ -26,5 +26,7 @@ int8_t FAT_Init(void (*phyInit)(void),
 
 int FAT_OpenFile(const char* filename);
 int FAT_ReadFile(int file, uint8_t* data, int count);
+int FAT_MoveRdPtr(int file, int newWrPtr);
+int FAT_WriteFile(int file, uint8_t* data, int count);
 
 #endif /* FAT_H_ */

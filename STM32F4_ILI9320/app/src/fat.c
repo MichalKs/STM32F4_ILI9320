@@ -385,6 +385,37 @@ int FAT_OpenFile(const char* filename) {
 
   return id;
 }
+int FAT_CloseFile() {
+
+}
+/**
+ * @brief Move the read pointer to new location in file
+ * @param file File ID
+ * @param newWrPtr New read pointer location
+ * @return New read pointer location or -1 if error ocurred.
+ */
+int FAT_MoveRdPtr(int file, int newWrPtr) {
+
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
+
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    return -1; // EOF for not open file
+  }
+  // We have already reached EOF
+  // Can't move beyond length of file for read
+  if (newWrPtr > openedFiles[file].fileSize) {
+    println("EOF reached");
+    return -1;
+  }
+
+  openedFiles[file].rdPtr = newWrPtr;
+  return newWrPtr;
+
+}
 /**
  * @brief Reads contents of file.
  * @param id ID of opened file
@@ -394,6 +425,11 @@ int FAT_OpenFile(const char* filename) {
  * TODO Also read next clusters
  */
 int FAT_ReadFile(int file, uint8_t* data, int count) {
+
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
 
   // File not opened
   if (openedFiles[file].id == -1) {
@@ -445,6 +481,87 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
   }
 
   return len;
+}
+/**
+ * @brief
+ * @param file
+ * @param newWrPtr
+ * @return
+ * FIXME Finish function
+ */
+int FAT_MoveWrPtr(int file, int newWrPtr) {
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    return -1; // EOF for not open file
+  }
+
+  return newWrPtr;
+}
+
+/**
+ * @brief Writes data to a file
+ * @param file ID of file, to which we write data.
+ * @param data Data to write
+ * @param count Number of bytes to write
+ * @return Number of bytes written.
+ * TODO Make this cross sector and cluster boundaries
+ */
+int FAT_WriteFile(int file, uint8_t* data, int count) {
+
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    return -1; // Not open file
+  }
+
+  int len = 0; // number of bytes written
+
+  // jump to sector where write pointer is at (counting from first sector)
+  uint32_t sectorOffset = openedFiles[file].wrPtr / 512;
+
+  // which cluster from start cluster is the sector at
+  uint32_t clusterOffset = sectorOffset/
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+  // sector to read in the cluster
+  sectorOffset = sectorOffset %
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+
+  // TODO Add function for finding cluster X of file
+  // FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset);
+
+  uint32_t cluster = openedFiles[file].firstCluster;
+  uint32_t sector = FAT_Cluster2Sector(cluster);
+
+//  sector += sectorOffset;
+
+  phyCallbacks.phyReadSectors(buf, sector, 1);
+
+//  FAT_GetEntryInFAT(cluster);
+
+  // start getting data from read pointer (in the current sector)
+  uint8_t* ptr = buf + openedFiles[file].rdPtr % 512;
+
+  for (int i = 0; i < count; i++) {
+
+    data[i] = *ptr++;
+    openedFiles[file].rdPtr++;
+    len++;
+    // check if EOF reached
+    if (openedFiles[file].rdPtr > openedFiles[file].fileSize) {
+      println("EOF reached");
+      break;
+    }
+  }
+
+  return len;
+
 }
 
 /**
@@ -523,8 +640,7 @@ static int FAT_FindFile(FAT_File* file) {
 
     // there are 16 entries per sector
     // Read new sector every 16 entries
-    if ((i&0x0000000f) == 0) {
-
+    if ((i%16) == 0) {
       println("Find file: read new sector");
       // TODO Also change cluster
       // if whole cluster read - find next cluster
@@ -560,7 +676,7 @@ static int FAT_FindFile(FAT_File* file) {
       j++;
     }
 
-    println("Comparing file %u", (unsigned int)i);
+//    println("Comparing file %u", (unsigned int)i);
     i++; // update counter to next entry.
 
     if (dirEntry->filename[0] == 0x00) {
