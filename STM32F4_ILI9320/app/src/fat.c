@@ -229,7 +229,7 @@ static uint32_t FAT_Cluster2Sector(uint32_t cluster);
 static uint32_t FAT_GetEntryInFAT(uint32_t cluster);
 static int FAT_FindFile(FAT_File* file);
 static int FAT_GetNextId(void);
-int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
+static int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
     uint32_t* clusterNumber);
 
 static uint8_t buf[512]; ///< Buffer for reading sectors
@@ -255,6 +255,22 @@ static void FAT_ReadSector(uint32_t sector) {
   sectInBuffer = sector;
   phyCallbacks.phyReadSectors(buf, sector, 1);
   println("ReadSector: Read sector %u", (unsigned int) sector);
+
+}
+
+/**
+ * @brief Convenience function for reading sectors.
+ *
+ * @details It checks if the sector isn't in the buffer first
+ * as a simple caching mechanism.
+ *
+ * @param sector Sector to read.
+ */
+static void FAT_WriteSector(uint32_t sector) {
+
+  // FIXME Check the SD card write function
+//  phyCallbacks.phyWriteSectors(buf, sector, 1);
+  println("WriteSector: Written sector %u", (unsigned int) sector);
 
 }
 
@@ -459,6 +475,34 @@ int FAT_MoveRdPtr(int file, int newWrPtr) {
   return newWrPtr;
 
 }
+
+/**
+ * @brief Move the write pointer to new location in file.
+ * @param file File ID
+ * @param newWrPtr New write pointer location
+ * @return New write pointer location or -1 if error ocurred.
+ * FIXME Finish function
+ */
+int FAT_MoveWrPtr(int file, int newWrPtr) {
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    return -1; // EOF for not open file
+  }
+  // TODO If new ptr value is larger than file size - zero pad
+  // Can't move beyond length of file for read
+  if (newWrPtr > openedFiles[file].fileSize) {
+    println("EOF reached");
+    return -1;
+  }
+
+  openedFiles[file].wrPtr = newWrPtr;
+  return newWrPtr;
+}
+
 /**
  * @brief Reads contents of file.
  * @param id ID of opened file
@@ -550,6 +594,103 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
 
   return len;
 }
+
+/**
+ * @brief Writes data to a file
+ * @param file ID of file, to which we write data.
+ * @param data Data to write
+ * @param count Number of bytes to write
+ * @return Number of bytes written.
+ * TODO Make this cross sector and cluster boundaries
+ * FIXME For now we can write only up to EOF
+ */
+int FAT_WriteFile(int file, uint8_t* data, int count) {
+
+  println("Write file function");
+
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    println("Maximum number of files open");
+    return -1;
+  }
+
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    println("File not open");
+    return -1; // EOF for not open file
+  }
+  // We have already reached EOF
+  // TODO Make this cross EOF - adding more data - change file size in root dir
+  if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+    println("EOF reached");
+    return -1;
+  }
+
+  int len = 0; // number of bytes written
+
+  // jump to sector where write pointer is at (counting from first sector)
+  // each sector is 512 bytes long
+  uint32_t sectorOffset = openedFiles[file].wrPtr / 512;
+
+  // which cluster from start cluster is the sector at
+  uint32_t clusterOffset = sectorOffset/
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+  // sector to write in the cluster
+  sectorOffset = sectorOffset %
+      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+
+  // find the cluster number where the data is at
+  uint32_t baseCluster = 0;
+  FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset,
+      &baseCluster);
+  uint32_t baseSector = FAT_Cluster2Sector(baseCluster);
+
+  // add number of sectors in the cluster where data is at
+  baseSector += sectorOffset;
+
+  // read data sector
+  FAT_ReadSector(baseSector);
+
+  // start writing data from write pointer (in the current sector)
+  uint8_t* ptr = buf + openedFiles[file].wrPtr % 512;
+
+  println("Write file - writing data");
+  for (int i = 0; i < count; i++) {
+
+    *ptr++ = data[i];
+    openedFiles[file].wrPtr++;
+    len++;
+    // check if EOF reached
+    if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+      println("EOF reached");
+      FAT_WriteSector(baseSector); // save data
+      break;
+    }
+    // if sector boundary reached
+    if (openedFiles[file].wrPtr % 512 == 0) {
+      println("Write file: new sector");
+      FAT_WriteSector(baseSector); // save data
+      // increment sector counter
+      sectorOffset++;
+      // which sector in cluster is it
+      sectorOffset = sectorOffset %
+          mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+
+      // if first sector, then read new cluster
+      if (sectorOffset == 0) {
+        println("Write file: jump to next cluster");
+        // change cluster to next
+        FAT_GetCluster(baseCluster, 1, &baseCluster);
+      }
+      baseSector = FAT_Cluster2Sector(baseCluster) + sectorOffset;
+      FAT_ReadSector(baseSector);
+      ptr = buf;
+    }
+  }
+  FAT_WriteSector(baseSector); // save data
+  return len;
+
+}
 /**
  * @brief Gets number of cluster clusterOffset in a file
  *
@@ -560,7 +701,7 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
  * @param clusterNumber The number of the searched cluster (function writes this)
  * @return Cluster from start of file we really found
  */
-int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
+static int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
     uint32_t* clusterNumber) {
 
   uint32_t entry = firstCluster;
@@ -579,90 +720,6 @@ int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
   return clusterOffset;
 
 }
-
-/**
- * @brief
- * @param file
- * @param newWrPtr
- * @return
- * FIXME Finish function
- */
-int FAT_MoveWrPtr(int file, int newWrPtr) {
-  // if incorrect file ID
-  if (file >= MAX_OPENED_FILES) {
-    return -1;
-  }
-  // File not opened
-  if (openedFiles[file].id == -1) {
-    return -1; // EOF for not open file
-  }
-
-  return newWrPtr;
-}
-
-/**
- * @brief Writes data to a file
- * @param file ID of file, to which we write data.
- * @param data Data to write
- * @param count Number of bytes to write
- * @return Number of bytes written.
- * TODO Make this cross sector and cluster boundaries
- * FIXME Not working yet
- */
-int FAT_WriteFile(int file, uint8_t* data, int count) {
-
-  // if incorrect file ID
-  if (file >= MAX_OPENED_FILES) {
-    return -1;
-  }
-  // File not opened
-  if (openedFiles[file].id == -1) {
-    return -1; // Not open file
-  }
-
-  int len = 0; // number of bytes written
-
-  // jump to sector where write pointer is at (counting from first sector)
-  uint32_t sectorOffset = openedFiles[file].wrPtr / 512;
-
-  // which cluster from start cluster is the sector at
-//  uint32_t clusterOffset = sectorOffset/
-//      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
-  // sector to read in the cluster
-  sectorOffset = sectorOffset %
-      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
-
-  // TODO Add function for finding cluster X of file
-  // FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset);
-
-  uint32_t cluster = openedFiles[file].firstCluster;
-  uint32_t sector = FAT_Cluster2Sector(cluster);
-
-//  sector += sectorOffset;
-
-  phyCallbacks.phyReadSectors(buf, sector, 1);
-
-//  FAT_GetEntryInFAT(cluster);
-
-  // start getting data from read pointer (in the current sector)
-  uint8_t* ptr = buf + openedFiles[file].rdPtr % 512;
-
-  for (int i = 0; i < count; i++) {
-
-    data[i] = *ptr++;
-    openedFiles[file].rdPtr++;
-    len++;
-    // check if EOF reached
-    if (openedFiles[file].rdPtr > openedFiles[file].fileSize) {
-      println("EOF reached");
-      break;
-    }
-  }
-
-  return len;
-
-}
-
 /**
  * @brief Converts cluster number to sector number from start of drive
  *

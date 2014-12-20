@@ -123,20 +123,27 @@ int main(void) {
 //  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
 
   FAT_Init(SD_Init, SD_ReadSectors, SD_WriteSectors);
-  int id = FAT_OpenFile("HELLO   TXT");
+  int hello = FAT_OpenFile("HELLO   TXT");
   uint8_t data[50];
 
-  int i = FAT_ReadFile(id, data, 5);
-  i += FAT_ReadFile(id, data+i, 10);
+  int i = FAT_ReadFile(hello, data, 5);
+  i += FAT_ReadFile(hello, data+i, 10);
   hexdumpC(data, i);
 
-  id = FAT_OpenFile("HAMLET  TXT");
+  int hamlet = FAT_OpenFile("HAMLET  TXT");
 
-  FAT_MoveRdPtr(id, 184120);
+  FAT_MoveRdPtr(hamlet, 184120);
 
-  i = FAT_ReadFile(id, data, 5);
-  i += FAT_ReadFile(id, data+i, 30);
+  i = FAT_ReadFile(hamlet, data, 5);
+  i += FAT_ReadFile(hamlet, data+i, 30);
   hexdumpC(data, i);
+
+  for (int k = 0; k < 5; k++) {
+    data[k] = 'x';
+  }
+
+//  FAT_WriteFile(hello, data, 5);
+
 
   GUI_Init();
 

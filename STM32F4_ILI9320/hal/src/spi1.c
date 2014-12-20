@@ -142,6 +142,18 @@ void SPI1_ReadBuffer(uint8_t* buf, uint32_t len) {
   }
 }
 /**
+ * @brief Write multiple data on SPI1.
+ * @param buf Buffer with write data.
+ * @param len Number of bytes to write.
+ * @warning Blocking function!
+ */
+void SPI1_WriteBuffer(uint8_t* buf, uint32_t len) {
+
+  while (len--) {
+    SPI1_Transmit(*buf++);
+  }
+}
+/**
  * @brief Transmit multiple data on SPI1.
  * @param rx_buf Receive buffer.
  * @param tx_buf Transmit buffer.

@@ -99,6 +99,7 @@ static void SD_GetResponseR3orR7(uint8_t* buf);
 #define SD_HAL_DeselectCard SPI1_Deselect
 #define SD_HAL_TransmitData SPI1_Transmit
 #define SD_HAL_ReadBuffer SPI1_ReadBuffer
+#define SD_HAL_WriteBuffer SPI1_WriteBuffer
 
 static uint8_t isSDHC; ///< Is the card SDHC?
 
@@ -296,11 +297,12 @@ void SD_Init(void) {
 
 }
 /**
- *
- * @param buf
- * @param sector
- * @param count
- * @return
+ * @brief Read sectors from SD card
+ * @param buf Data buffer
+ * @param sector Start sector
+ * @param count Number of sectors to write
+ * @retval 0 Read was successful
+ * @retval 1 Error occurred
  */
 uint8_t SD_ReadSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
@@ -317,6 +319,7 @@ uint8_t SD_ReadSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
   if (resp.responseR1 != 0x00) {
     println("SD_READ_MULTIPLE_BLOCK error");
+    return 1;
   }
 
   while (count) {
@@ -337,11 +340,20 @@ uint8_t SD_ReadSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
   return 0;
 }
-
+/**
+ * @brief Write sectors to SD card
+ * @param buf Data buffer
+ * @param sector First sector to write
+ * @param count Number of sectors to write
+ * @retval 0 Read was successful
+ * @retval 1 Error occurred
+ * FIXME This function doesn't work
+ */
 uint8_t SD_WriteSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
-
-  sector *= 512;
+  if (!isSDHC) {
+    sector *= 512;
+  }
 
   SD_HAL_SelectCard();
 
