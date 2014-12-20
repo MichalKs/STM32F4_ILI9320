@@ -225,12 +225,38 @@ static FAT_PhysicalCb phyCallbacks;
 
 
 static uint32_t FAT_Cluster2Sector(uint32_t cluster);
-static void FAT_ListRootDir(void);
+//static void FAT_ListRootDir(void);
 static uint32_t FAT_GetEntryInFAT(uint32_t cluster);
 static int FAT_FindFile(FAT_File* file);
 static int FAT_GetNextId(void);
+int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
+    uint32_t* clusterNumber);
 
 static uint8_t buf[512]; ///< Buffer for reading sectors
+
+/**
+ * @brief Convenience function for reading sectors.
+ *
+ * @details It checks if the sector isn't in the buffer first
+ * as a simple caching mechanism.
+ *
+ * @param sector Sector to read.
+ */
+static void FAT_ReadSector(uint32_t sector) {
+
+  static uint32_t sectInBuffer = UINT32_MAX;
+
+  // check if we already read the sector
+  if (sectInBuffer == sector) {
+    println("ReadSector: Sector already read");
+    return;
+  }
+
+  sectInBuffer = sector;
+  phyCallbacks.phyReadSectors(buf, sector, 1);
+  println("ReadSector: Read sector %u", (unsigned int) sector);
+
+}
 
 /**
  * @brief Initialize FAT file system
@@ -251,7 +277,7 @@ int8_t FAT_Init(void (*phyInit)(void),
   phyCallbacks.phyInit();
 
   // Read MBR - first sector (0)
-  phyCallbacks.phyReadSectors(buf, 0, 1);
+  FAT_ReadSector(0);
 
   FAT_MBR* mbr = (FAT_MBR*)buf;
   if (mbr->signature != 0xaa55) {
@@ -286,7 +312,7 @@ int8_t FAT_Init(void (*phyInit)(void),
   }
 
   // Read boot sector of first partition
-  phyCallbacks.phyReadSectors(buf, mountedDisks[0].partitionInfo[0].startAddress, 1);
+  FAT_ReadSector(mountedDisks[0].partitionInfo[0].startAddress);
 
   FAT32_BootSector* bootSector = (FAT32_BootSector*)buf;
 
@@ -443,13 +469,17 @@ int FAT_MoveRdPtr(int file, int newWrPtr) {
  */
 int FAT_ReadFile(int file, uint8_t* data, int count) {
 
+  println("Read file function");
+
   // if incorrect file ID
   if (file >= MAX_OPENED_FILES) {
+    println("Maximum number of files open");
     return -1;
   }
 
   // File not opened
   if (openedFiles[file].id == -1) {
+    println("File not open");
     return -1; // EOF for not open file
   }
   // We have already reached EOF
@@ -471,19 +501,22 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
   sectorOffset = sectorOffset %
       mountedDisks[0].partitionInfo[0].sectorsPerCluster;
 
-  // TODO Add function for finding cluster X of file
-  // FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset);
-
-  uint32_t baseCluster = openedFiles[file].firstCluster + clusterOffset;
+  // find the cluster number where the data is at
+  uint32_t baseCluster = 0;
+  FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset,
+      &baseCluster);
   uint32_t baseSector = FAT_Cluster2Sector(baseCluster);
 
+  // add number of sectors in the cluster where data is at
   baseSector += sectorOffset;
 
-  phyCallbacks.phyReadSectors(buf, baseSector, 1);
+  // read data sector
+  FAT_ReadSector(baseSector);
 
   // start getting data from read pointer (in the current sector)
   uint8_t* ptr = buf + openedFiles[file].rdPtr % 512;
 
+  println("Read file - reading data");
   for (int i = 0; i < count; i++) {
 
     data[i] = *ptr++;
@@ -495,18 +528,58 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
       break;
     }
     // if sector boundary reached
-    // TODO Add cluster crossing
     if (openedFiles[file].rdPtr % 512 == 0) {
       println("Read file: read new sector");
-      baseSector++;
-      phyCallbacks.phyReadSectors(buf, baseSector, 1);
+      // increment sector counter
+      sectorOffset++;
+      // which sector in cluster is it
+      sectorOffset = sectorOffset %
+          mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+
+      // if first sector, then read new cluster
+      if (sectorOffset == 0) {
+        println("Read file: jump to next cluster");
+        // change cluster to next
+        FAT_GetCluster(baseCluster, 1, &baseCluster);
+      }
+      baseSector = FAT_Cluster2Sector(baseCluster) + sectorOffset;
+      FAT_ReadSector(baseSector);
       ptr = buf;
     }
-
   }
 
   return len;
 }
+/**
+ * @brief Gets number of cluster clusterOffset in a file
+ *
+ * @details
+ *
+ * @param firstCluster First cluster of file
+ * @param clusterOffset Cluster from start of file we want to find
+ * @param clusterNumber The number of the searched cluster (function writes this)
+ * @return Cluster from start of file we really found
+ */
+int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
+    uint32_t* clusterNumber) {
+
+  uint32_t entry = firstCluster;
+  int i;
+
+  for (i = 0; i < clusterOffset; i++) {
+    entry = FAT_GetEntryInFAT(entry);
+    // last cluster reached before we reached clusterOffset
+    if (entry == 0xFFFFFFFF) {
+      *clusterNumber = entry; // return the entry
+      return i;
+    }
+  }
+
+  *clusterNumber = entry; // return the entry
+  return clusterOffset;
+
+}
+
 /**
  * @brief
  * @param file
@@ -534,6 +607,7 @@ int FAT_MoveWrPtr(int file, int newWrPtr) {
  * @param count Number of bytes to write
  * @return Number of bytes written.
  * TODO Make this cross sector and cluster boundaries
+ * FIXME Not working yet
  */
 int FAT_WriteFile(int file, uint8_t* data, int count) {
 
@@ -552,8 +626,8 @@ int FAT_WriteFile(int file, uint8_t* data, int count) {
   uint32_t sectorOffset = openedFiles[file].wrPtr / 512;
 
   // which cluster from start cluster is the sector at
-  uint32_t clusterOffset = sectorOffset/
-      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
+//  uint32_t clusterOffset = sectorOffset/
+//      mountedDisks[0].partitionInfo[0].sectorsPerCluster;
   // sector to read in the cluster
   sectorOffset = sectorOffset %
       mountedDisks[0].partitionInfo[0].sectorsPerCluster;
@@ -622,10 +696,11 @@ static uint32_t FAT_GetEntryInFAT(uint32_t cluster) {
 
   println("FAT entry is at sector %d", (unsigned int)sector);
 
-  uint8_t buf[512]; // buffer for sector data
+//  uint8_t buf[512]; // buffer for sector data
 
   // read sector where FAT entry is at
-  phyCallbacks.phyReadSectors(buf, sector, 1);
+//  phyCallbacks.phyReadSectors(buf, sector, 1);
+  FAT_ReadSector(sector);
 
   // the byte number of the entry in the given sector is the remainder
   // of the previous calculation
@@ -688,12 +763,10 @@ static int FAT_FindFile(FAT_File* file) {
       // and the counter j, which updates every 16 entries
       currentSector = FAT_Cluster2Sector(currentCluster) + j;
       // read new sector every 16 entries
-      phyCallbacks.phyReadSectors(buf, currentSector, 1);
+      FAT_ReadSector(currentSector);
 
       // FIXME This may be needed for terminal
 //      TIMER_Delay(1000);
-
-      println("Read sector %u", (unsigned int) currentSector);
 
       // first entry in buffer for new sector
       dirEntry = (FAT_RootDirEntry*)buf;
@@ -716,7 +789,7 @@ static int FAT_FindFile(FAT_File* file) {
       continue;
     }
     if (dirEntry->attributes == 0x0f) {
-      println("Long file");
+//      println("Long file");
       dirEntry++;
       continue;
     }
@@ -772,66 +845,66 @@ static int FAT_GetNextId(void) {
  * @brief Lists files in root directory of volume
  * TODO Finish this function. Used for tests for now
  */
-static void FAT_ListRootDir(void) {
-
-  println("Root dir");
-
-  // read first sector of root dir
-  phyCallbacks.phyReadSectors(buf,
-      mountedDisks[0].partitionInfo[0].rootDirSector, 1);
-
-  FAT_RootDirEntry* dirEntry = (FAT_RootDirEntry*)buf;
-
-  char filename[12];
-  char* ptr;
-  int i, j;
-
-  // 16 entries in one sector
-  for (i = 0; i< 16; i++) {
-
-    println("FILE %d:", i);
-
-    ptr = (char*)dirEntry->filename;
-
-    // check if file is empty
-    if (dirEntry->filename[0] == 0x00 || dirEntry->filename[0] == 0xe5) {
-//      println("Empty file");
-      dirEntry++;
-      continue;
-    }
-    if (dirEntry->attributes == 0x0f) {
-      println("Long file");
-      dirEntry++;
-      continue;
-    }
-
-    for (j=0; j<11; j++) {
-      filename[j] = *ptr++;
-    }
-    filename[11] = 0;
-
-    println("Filename %s, attributes 0x%02x, file size %d",
-        filename, (unsigned int)dirEntry->attributes,
-        (unsigned int)dirEntry->fileSize);
-
-    if (!strcmp(filename, "HELLO   TXT")) {
-      println("Found file %s!!!!", filename);
-      uint8_t buf2[512];
-      uint32_t cluster = (((uint32_t)(dirEntry->firstClusterH))<<16) |
-          (uint32_t)dirEntry->firstClusterL;
-      println("File is at cluster %d", (unsigned int)cluster);
-      println("File is at sector %d", (unsigned int)FAT_Cluster2Sector(cluster));
-      println("File size is %d",(unsigned int)dirEntry->fileSize);
-
-      phyCallbacks.phyReadSectors(buf2, FAT_Cluster2Sector(cluster), 1);
-
-      hexdump(buf2, 16);
-      println("%s",buf2);
-
-      FAT_GetEntryInFAT(cluster);
-    }
-
-    dirEntry++;
-  }
-
-}
+//static void FAT_ListRootDir(void) {
+//
+//  println("Root dir");
+//
+//  // read first sector of root dir
+//  phyCallbacks.phyReadSectors(buf,
+//      mountedDisks[0].partitionInfo[0].rootDirSector, 1);
+//
+//  FAT_RootDirEntry* dirEntry = (FAT_RootDirEntry*)buf;
+//
+//  char filename[12];
+//  char* ptr;
+//  int i, j;
+//
+//  // 16 entries in one sector
+//  for (i = 0; i< 16; i++) {
+//
+//    println("FILE %d:", i);
+//
+//    ptr = (char*)dirEntry->filename;
+//
+//    // check if file is empty
+//    if (dirEntry->filename[0] == 0x00 || dirEntry->filename[0] == 0xe5) {
+////      println("Empty file");
+//      dirEntry++;
+//      continue;
+//    }
+//    if (dirEntry->attributes == 0x0f) {
+//      println("Long file");
+//      dirEntry++;
+//      continue;
+//    }
+//
+//    for (j=0; j<11; j++) {
+//      filename[j] = *ptr++;
+//    }
+//    filename[11] = 0;
+//
+//    println("Filename %s, attributes 0x%02x, file size %d",
+//        filename, (unsigned int)dirEntry->attributes,
+//        (unsigned int)dirEntry->fileSize);
+//
+//    if (!strcmp(filename, "HELLO   TXT")) {
+//      println("Found file %s!!!!", filename);
+//      uint8_t buf2[512];
+//      uint32_t cluster = (((uint32_t)(dirEntry->firstClusterH))<<16) |
+//          (uint32_t)dirEntry->firstClusterL;
+//      println("File is at cluster %d", (unsigned int)cluster);
+//      println("File is at sector %d", (unsigned int)FAT_Cluster2Sector(cluster));
+//      println("File size is %d",(unsigned int)dirEntry->fileSize);
+//
+//      phyCallbacks.phyReadSectors(buf2, FAT_Cluster2Sector(cluster), 1);
+//
+//      hexdump(buf2, 16);
+//      println("%s",buf2);
+//
+//      FAT_GetEntryInFAT(cluster);
+//    }
+//
+//    dirEntry++;
+//  }
+//
+//}

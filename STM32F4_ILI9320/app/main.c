@@ -132,10 +132,10 @@ int main(void) {
 
   id = FAT_OpenFile("HAMLET  TXT");
 
-  FAT_MoveRdPtr(id, 500);
+  FAT_MoveRdPtr(id, 184120);
 
   i = FAT_ReadFile(id, data, 5);
-  i += FAT_ReadFile(id, data+i, 10);
+  i += FAT_ReadFile(id, data+i, 30);
   hexdumpC(data, i);
 
   GUI_Init();
