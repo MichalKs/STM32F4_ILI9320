@@ -132,7 +132,7 @@ int main(void) {
 
   id = FAT_OpenFile("HAMLET  TXT");
 
-  FAT_MoveRdPtr(id, 100);
+  FAT_MoveRdPtr(id, 500);
 
   i = FAT_ReadFile(id, data, 5);
   i += FAT_ReadFile(id, data+i, 10);

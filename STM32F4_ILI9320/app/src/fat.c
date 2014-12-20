@@ -385,8 +385,24 @@ int FAT_OpenFile(const char* filename) {
 
   return id;
 }
-int FAT_CloseFile() {
+/**
+ * @brief Close a file.
+ * @param file ID of file
+ * @return ID of closed file (won't be useful anymore) or -1 if error.
+ */
+int FAT_CloseFile(int file) {
 
+  // if incorrect file ID
+  if (file >= MAX_OPENED_FILES) {
+    return -1;
+  }
+  // File not opened
+  if (openedFiles[file].id == -1) {
+    return -1; // EOF for not open file
+  }
+  // close file if no errors
+  openedFiles[file].id = -1;
+  return file;
 }
 /**
  * @brief Move the read pointer to new location in file
@@ -405,13 +421,14 @@ int FAT_MoveRdPtr(int file, int newWrPtr) {
   if (openedFiles[file].id == -1) {
     return -1; // EOF for not open file
   }
-  // We have already reached EOF
+
   // Can't move beyond length of file for read
   if (newWrPtr > openedFiles[file].fileSize) {
     println("EOF reached");
     return -1;
   }
 
+  // if no errors - move the read pointer
   openedFiles[file].rdPtr = newWrPtr;
   return newWrPtr;
 
@@ -436,7 +453,7 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
     return -1; // EOF for not open file
   }
   // We have already reached EOF
-  if (openedFiles[file].rdPtr > openedFiles[file].fileSize) {
+  if (openedFiles[file].rdPtr >= openedFiles[file].fileSize) {
     println("EOF reached");
     return -1;
   }
@@ -444,6 +461,7 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
   int len = 0; // number of bytes read
 
   // jump to sector where read pointer is at (counting from first sector)
+  // each sector is 512 bytes long
   uint32_t sectorOffset = openedFiles[file].rdPtr / 512;
 
   // which cluster from start cluster is the sector at
@@ -456,14 +474,12 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
   // TODO Add function for finding cluster X of file
   // FAT_GetCluster(openedFiles[file].firstCluster, clusterOffset);
 
-  uint32_t cluster = openedFiles[file].firstCluster;
-  uint32_t sector = FAT_Cluster2Sector(cluster);
+  uint32_t baseCluster = openedFiles[file].firstCluster + clusterOffset;
+  uint32_t baseSector = FAT_Cluster2Sector(baseCluster);
 
-//  sector += sectorOffset;
+  baseSector += sectorOffset;
 
-  phyCallbacks.phyReadSectors(buf, sector, 1);
-
-//  FAT_GetEntryInFAT(cluster);
+  phyCallbacks.phyReadSectors(buf, baseSector, 1);
 
   // start getting data from read pointer (in the current sector)
   uint8_t* ptr = buf + openedFiles[file].rdPtr % 512;
@@ -474,10 +490,19 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
     openedFiles[file].rdPtr++;
     len++;
     // check if EOF reached
-    if (openedFiles[file].rdPtr > openedFiles[file].fileSize) {
+    if (openedFiles[file].rdPtr >= openedFiles[file].fileSize) {
       println("EOF reached");
       break;
     }
+    // if sector boundary reached
+    // TODO Add cluster crossing
+    if (openedFiles[file].rdPtr % 512 == 0) {
+      println("Read file: read new sector");
+      baseSector++;
+      phyCallbacks.phyReadSectors(buf, baseSector, 1);
+      ptr = buf;
+    }
+
   }
 
   return len;
