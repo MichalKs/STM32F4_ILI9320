@@ -35,6 +35,7 @@ void    SPI1_Init           (void);
 void    SPI1_Select         (void);
 void    SPI1_Deselect       (void);
 void    SPI1_ReadBuffer     (uint8_t* buf, uint32_t len);
+void    SPI1_WriteBuffer    (uint8_t* buf, uint32_t len);
 void    SPI1_SendBuffer     (uint8_t* buf, uint32_t len);
 void    SPI1_TransmitBuffer (uint8_t* rx_buf, uint8_t* tx_buf, uint32_t len);
 

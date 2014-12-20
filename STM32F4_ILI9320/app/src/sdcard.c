@@ -319,6 +319,7 @@ uint8_t SD_ReadSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
   if (resp.responseR1 != 0x00) {
     println("SD_READ_MULTIPLE_BLOCK error");
+    SD_HAL_DeselectCard();
     return 1;
   }
 
@@ -347,37 +348,39 @@ uint8_t SD_ReadSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
  * @param count Number of sectors to write
  * @retval 0 Read was successful
  * @retval 1 Error occurred
- * FIXME This function doesn't work
  */
 uint8_t SD_WriteSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
+  SD_ResponseR1 resp;
+
+  // SDSC cards use byte addressing, SDHC use block addressing
   if (!isSDHC) {
     sector *= 512;
   }
 
   SD_HAL_SelectCard();
 
-  uint8_t status;
+  resp.responseR1 = SD_SendCommand(SD_WRITE_MULTIPLE_BLOCK, sector);
 
-  do {
-    status = SD_SendCommand(SD_WRITE_MULTIPLE_BLOCK, sector);
-    TIMER_Delay(5);
-  } while (status != 0);
-
-  SD_HAL_TransmitData(0xff);
+  if (resp.responseR1 != 0x00) {
+    println("SD_WRITE_MULTIPLE_BLOCK error");
+    SD_HAL_DeselectCard();
+    return 1;
+  }
 
   while (count) {
-    SD_HAL_TransmitData(0xfc); // send data token
-    SD_HAL_ReadBuffer(buf, 512);
+    SD_HAL_TransmitData(0xfc); // send start block token
+    SD_HAL_WriteBuffer(buf, 512);
     SD_HAL_TransmitData(0xff);
     SD_HAL_TransmitData(0xff); // two bytes CRC
     count--;
     buf += 512; // move buffer pointer forward
+    while(!SD_HAL_TransmitData(0xff)); // wait while card is busy
   }
 
-  SD_HAL_TransmitData(0xfd); // stop transmission
-  SD_HAL_TransmitData(0xff);
-  while(!SD_HAL_TransmitData(0xff));
+  SD_HAL_TransmitData(0xfd); // stop transmission token
+
+  while(!SD_HAL_TransmitData(0xff)); // wait while card is busy
 
   SD_HAL_DeselectCard();
 

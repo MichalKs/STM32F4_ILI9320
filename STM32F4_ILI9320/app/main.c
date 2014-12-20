@@ -142,8 +142,7 @@ int main(void) {
     data[k] = 'x';
   }
 
-//  FAT_WriteFile(hello, data, 5);
-
+  FAT_WriteFile(hello, data, 5);
 
   GUI_Init();
 

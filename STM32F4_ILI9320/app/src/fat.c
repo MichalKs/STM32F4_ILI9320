@@ -268,8 +268,7 @@ static void FAT_ReadSector(uint32_t sector) {
  */
 static void FAT_WriteSector(uint32_t sector) {
 
-  // FIXME Check the SD card write function
-//  phyCallbacks.phyWriteSectors(buf, sector, 1);
+  phyCallbacks.phyWriteSectors(buf, sector, 1);
   println("WriteSector: Written sector %u", (unsigned int) sector);
 
 }
