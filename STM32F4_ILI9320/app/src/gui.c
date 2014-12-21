@@ -21,7 +21,6 @@
 #include <tsc2046.h>
 #include <font_8x16.h>
 
-
 static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *h);
 
 /**
@@ -53,6 +52,8 @@ void GUI_AddButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
     void (*cb)(uint16_t x, uint16_t y), const char* text) {
 
   GRAPH_DrawRectangle(x,y,w,h);
+
+  // TODO Derive position of button text from string and font size
   GRAPH_DrawString(text, x+w/4, y+h/4);
 
   GUI_ConvertLCD2TSC(&x, &y, &w, &h);
@@ -60,7 +61,14 @@ void GUI_AddButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
   TSC2046_RegisterEvent(x, y, w, h, cb);
 
 }
-
+/**
+ * @brief Draws a label on screen
+ * @param x X coordinate of label origin.
+ * @param y Y coordinate of label origin.
+ * @param w Maximum width of label
+ * @param h Maximum height of label
+ * @param text Label contents
+ */
 void GUI_AddLabel(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
     const char* text) {
 
@@ -88,11 +96,11 @@ static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *
   tmpW = *h;
   tmpH = *w;
 
-  // basically I derived those manually
-  // by analyzing touchscreen readings
-
   const uint16_t lcdWidth = 320;
   const uint16_t lcdHeight = 240;
+
+  // basically I derived those manually
+  // by analyzing touchscreen readings
 
   const uint16_t tscMaxY = 3800;
   const uint16_t tscMinY = 400;
@@ -105,13 +113,13 @@ static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *
   // Y axis is inverted X axis of the LCD
   tmpY = tscMaxY - startY * tscDY/lcdWidth;
   // X axis is Y axis of the LCD
-  tmpX = tscMinX + startX * tscDX/lcdHeight; // good
+  tmpX = tscMinX + startX * tscDX/lcdHeight;
 
   *y = tmpY;
   *x = tmpX;
 
   *h = tmpH * tscDY/lcdWidth;
-  *w = tmpW * tscDX/lcdHeight; // good
+  *w = tmpW * tscDX/lcdHeight;
 
 }
 

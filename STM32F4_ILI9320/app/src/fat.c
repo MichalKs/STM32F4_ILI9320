@@ -135,7 +135,7 @@ typedef struct {
 } __attribute((packed)) FAT32_BootSector;
 
 /**
- * @brief Root directory entry
+ * @brief Root directory entry (32 bytes long)
  */
 typedef struct {
   uint8_t filename[8];        ///< Name of file
@@ -163,7 +163,8 @@ typedef struct {
   uint8_t attributes;         ///< Attributes of file
   uint16_t lastModifiedTime;  ///< Last modified time of file
   uint16_t lastModifiedDate;  ///< Last modified date of file
-  int id;                ///< File ID
+  uint32_t rootDirEntry;      ///< Number of root dir entry for file
+  int id;                     ///< File ID
   uint32_t wrPtr;             ///< Pointer to current write location
   uint32_t rdPtr;             ///< Pointer to current read location
 
@@ -231,6 +232,7 @@ static int FAT_FindFile(FAT_File* file);
 static int FAT_GetNextId(void);
 static int FAT_GetCluster(uint32_t firstCluster, uint32_t clusterOffset,
     uint32_t* clusterNumber);
+static void FAT_UpdateRootEntry(int file);
 
 static uint8_t buf[512]; ///< Buffer for reading sectors
 
@@ -257,6 +259,8 @@ static void FAT_ReadSector(uint32_t sector) {
   println("ReadSector: Read sector %u", (unsigned int) sector);
 
 }
+
+
 
 /**
  * @brief Convenience function for reading sectors.
@@ -662,13 +666,13 @@ int FAT_WriteFile(int file, uint8_t* data, int count) {
     // check if EOF reached
     if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
       println("EOF reached");
-      FAT_WriteSector(baseSector); // save data
       break;
     }
     // if sector boundary reached
     if (openedFiles[file].wrPtr % 512 == 0) {
       println("Write file: new sector");
       FAT_WriteSector(baseSector); // save data
+//      FAT_UpdateRootEntry(file);
       // increment sector counter
       sectorOffset++;
       // which sector in cluster is it
@@ -686,10 +690,55 @@ int FAT_WriteFile(int file, uint8_t* data, int count) {
       ptr = buf;
     }
   }
+
   FAT_WriteSector(baseSector); // save data
+  FAT_UpdateRootEntry(file);
   return len;
 
 }
+/**
+ * @brief Updates the root directory entry of a given file.
+ *
+ * @details This function is called after a write to the file
+ * in order to update the timestamp and the file length if
+ * necessary.
+ *
+ * @param file File ID
+ */
+static void FAT_UpdateRootEntry(int file) {
+
+  // cluster of root dir
+  uint32_t currentCluster = mountedDisks[0].partitionInfo[0].rootDirCluster;
+
+  // sector where root dir is at
+  uint32_t sector = FAT_Cluster2Sector(currentCluster);
+
+  // every root dir entry is 32 bytes
+  // add sector offset of entry
+  sector += openedFiles[file].rootDirEntry * sizeof(FAT_RootDirEntry) / 512;
+
+  // read sector where entry is at
+  println("Reading sector %u", (unsigned int)sector);
+  FAT_ReadSector(sector);
+
+  // point to entry in the current sector
+  uint8_t* ptr = buf + openedFiles[file].rootDirEntry *
+      sizeof(FAT_RootDirEntry) % 512;
+
+  FAT_RootDirEntry* dirEntry = (FAT_RootDirEntry*) ptr;
+
+  char filename[12];
+  char* namePtr = (char*)dirEntry->filename;
+  // copy filename from directory entry
+  for (int k = 0; k < 11; k++) {
+    filename[k] = *namePtr++;
+  }
+  filename[11] = 0; // end string
+
+  println("Updating root entry for file: %s", filename);
+
+}
+
 /**
  * @brief Gets number of cluster clusterOffset in a file
  *
@@ -866,6 +915,8 @@ static int FAT_FindFile(FAT_File* file) {
       file->lastModifiedTime = dirEntry->lastModifiedTime;
       file->lastModifiedDate = dirEntry->lastModifiedDate;
       file->id = FAT_GetNextId();
+      file->rootDirEntry = i;
+      println("File root dir entry = %u", (unsigned int)file->rootDirEntry);
 
       file->rdPtr = 0; // start reading from 1st byte
       file->wrPtr = 0; // start writing from 1st byte

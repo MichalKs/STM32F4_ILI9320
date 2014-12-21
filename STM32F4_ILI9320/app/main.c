@@ -139,7 +139,7 @@ int main(void) {
   hexdumpC(data, i);
 
   for (int k = 0; k < 5; k++) {
-    data[k] = 'x';
+    data[k] = 'y';
   }
 
   FAT_WriteFile(hello, data, 5);

@@ -219,20 +219,6 @@ void GRAPH_DrawChar(uint8_t c, uint16_t x, uint16_t y) {
       }
     }
   }
-
-//  uint16_t bitmask;
-//
-//  for (int i = 0; i < 20; i++) {
-//    bitmask = 0x8000; // start from highest bit
-//    for (int j = 0; j < 16; j++, bitmask>>=1) {
-//      if (font21x39[i] & bitmask) {
-//        ILI9320_DrawPixel(x+i, y+j, 0xff, 0xff, 0xff);
-//      } else {
-//        ILI9320_DrawPixel(x+i, y+j, 0x00, 0x00, 0x00);
-//      }
-//
-//    }
-//  }
 }
 /**
  * @brief Writes a string on the LCD
@@ -406,6 +392,7 @@ void GRAPH_DrawCircle(uint16_t x, uint16_t y, uint16_t radius) {
  * @param x0 Center X coordinate.
  * @param y0 Center Y coordinate.
  * @param radius Circle radius.
+ * TODO Change implmentation - currenly not all pixels drawn
  */
 void GRAPH_DrawFilledCircle(uint16_t x, uint16_t y, uint16_t radius) {
 
