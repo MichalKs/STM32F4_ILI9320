@@ -718,14 +718,17 @@ static void FAT_UpdateRootEntry(int file) {
   sector += openedFiles[file].rootDirEntry * sizeof(FAT_RootDirEntry) / 512;
 
   // read sector where entry is at
-  println("Reading sector %u", (unsigned int)sector);
+
   FAT_ReadSector(sector);
+  println("Read sector %u", (unsigned int)sector);
 
   // point to entry in the current sector
-  uint8_t* ptr = buf + openedFiles[file].rootDirEntry *
-      sizeof(FAT_RootDirEntry) % 512;
+//  uint8_t* ptr = buf;
+//  ptr += (openedFiles[file].rootDirEntry * sizeof(FAT_RootDirEntry)) % 512;
 
-  FAT_RootDirEntry* dirEntry = (FAT_RootDirEntry*) ptr;
+  FAT_RootDirEntry* dirEntry = (FAT_RootDirEntry*) buf;
+  println("Dir entry %u", (unsigned int)openedFiles[file].rootDirEntry);
+  dirEntry += openedFiles[file].rootDirEntry;
 
   char filename[12];
   char* namePtr = (char*)dirEntry->filename;
@@ -736,6 +739,9 @@ static void FAT_UpdateRootEntry(int file) {
   filename[11] = 0; // end string
 
   println("Updating root entry for file: %s", filename);
+
+  dirEntry->fileSize = 20;
+  FAT_WriteSector(sector);
 
 }
 
@@ -905,6 +911,7 @@ static int FAT_FindFile(FAT_File* file) {
       filename[k] = *ptr++;
     }
     filename[11] = 0; // end string
+//    println("File name %s", filename);
     if (!strcmp(filename, file->filename)) {
 
       // get all the relevant information about the file
@@ -915,7 +922,7 @@ static int FAT_FindFile(FAT_File* file) {
       file->lastModifiedTime = dirEntry->lastModifiedTime;
       file->lastModifiedDate = dirEntry->lastModifiedDate;
       file->id = FAT_GetNextId();
-      file->rootDirEntry = i;
+      file->rootDirEntry = i-1;
       println("File root dir entry = %u", (unsigned int)file->rootDirEntry);
 
       file->rdPtr = 0; // start reading from 1st byte

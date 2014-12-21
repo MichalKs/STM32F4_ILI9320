@@ -361,48 +361,31 @@ uint8_t SD_WriteSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
 
   SD_HAL_SelectCard();
 
-  resp.responseR1 = SD_SendCommand(SD_WRITE_BLOCK, sector);
+  resp.responseR1 = SD_SendCommand(SD_WRITE_MULTIPLE_BLOCK, sector);
 
   if (resp.responseR1 != 0x00) {
-    println("SD_WRITE_BLOCK error");
+    println("SD_WRITE_MULTIPLE_BLOCK error");
     SD_HAL_DeselectCard();
     return 1;
   }
 
-//  while (count) {
-    SD_HAL_TransmitData(0xfe); // send start block token
+  while (count) {
+    SD_HAL_TransmitData(0xfc); // send start block token
     SD_HAL_WriteBuffer(buf, 512);
     SD_HAL_TransmitData(0xff);
     SD_HAL_TransmitData(0xff); // two bytes CRC
-//    count--;
-//    buf += 512; // move buffer pointer forward
+    count--;
+    buf += 512; // move buffer pointer forward
+
+    // data response
+    SD_HAL_TransmitData(0xff);
+
     while(!SD_HAL_TransmitData(0xff)); // wait while card is busy
-//  }
+  }
 
-//  SD_HAL_TransmitData(0xfd); // stop transmission token
-
-//  while(!SD_HAL_TransmitData(0xff)); // wait while card is busy
-
-  // check number of blocks written
-//  resp.responseR1 = SD_SendCommand(SD_APP_CMD, 0);
-//  resp.responseR1 = SD_SendCommand(SD_SEND_NUM_WR_BLOCKS, 0);
-
-//  if (resp.responseR1 != 0x00) {
-//    println("SD_SEND_NUM_WR_BLOCKS error");
-//    SD_HAL_DeselectCard();
-//    return 1;
-//  }
-
-//  uint8_t respBuf[6];
-//  uint8_t *ptr = respBuf;
-//
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  *ptr++ = SD_HAL_TransmitData(0xff);
-//  hexdump(respBuf, 6);
+  SD_HAL_TransmitData(0xfd); // stop transmission token
+  SD_HAL_TransmitData(0xff);
+  while(!SD_HAL_TransmitData(0xff)); // wait while card is busy
 
   SD_HAL_DeselectCard();
 
