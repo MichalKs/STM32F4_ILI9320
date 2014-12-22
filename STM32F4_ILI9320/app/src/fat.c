@@ -152,6 +152,50 @@ typedef struct {
   uint16_t firstClusterL;     ///< Low 16 bits of cluster
   uint32_t fileSize;          ///< Size of file in bytes.
 } __attribute((packed)) FAT_RootDirEntry;
+/**
+ * @brief Long directory entry
+ *
+ * @details Long directory entries always immediately precede a
+ * short directory entry. 1st long directory entry is the first one
+ * preceding the short directory entry. Long directory characters
+ * are 16-bit.
+ * After the last character of the name there is a 0x0000 character. The
+ * rest of the characters are padded with 0xffff.
+ */
+typedef struct {
+  uint8_t order;          ///< Order of entry in sequence of long dir entries. (0x40 mask means last long dir entry)
+  uint16_t name1[5];      ///< Part 1 of name
+  uint8_t attributes;     ///< Attributes. 0x0f for long file
+  uint8_t type;
+  uint8_t checksum;       ///< Checksum of name in short dir entry.
+  uint16_t name2[6];      ///< Part 2 of name
+  uint16_t firstClusterL; ///< Always 0
+  uint16_t name3[2];      ///< Part 3 of name
+}__attribute((packed)) FAT_LongDirEntry;
+/**
+ * @brief Structure for getting date information of a file.
+ */
+typedef union {
+
+  uint16_t date;
+  struct {
+    uint16_t day: 5;
+    uint16_t month: 4;
+    uint16_t year: 7;
+  } fields;
+} FAT_DateFormat;
+/**
+ * @brief Structure for getting date information of a file.
+ */
+typedef union {
+
+  uint16_t time;
+  struct {
+    uint16_t seconds: 5;
+    uint16_t minutes: 6;
+    uint16_t hours: 5;
+  } fields;
+} FAT_TimeFormat;
 
 /**
  * @brief Structure for keeping file information
@@ -431,6 +475,27 @@ int FAT_OpenFile(const char* filename) {
   return id;
 }
 /**
+ * @brief Create new file
+ * @param filename name of new file
+ * @return File ID or -1 if file exists
+ * TODO Finish this function
+ */
+int FAT_NewFile(const char* filename) {
+  FAT_File file;
+  strcpy(file.filename, filename);
+  println("Opening file %s", filename);
+
+  int id = FAT_FindFile(&file);
+
+  // if file found
+  if (id != -1) {
+    // file already exists
+    return -1;
+  }
+  return 0;
+}
+
+/**
  * @brief Close a file.
  * @param file ID of file
  * @return ID of closed file (won't be useful anymore) or -1 if error.
@@ -624,10 +689,12 @@ int FAT_WriteFile(int file, const uint8_t* data, int count) {
   }
   // We have already reached EOF
   // TODO Make this cross EOF - adding more data - change file size in root dir
-//  if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
-//    println("EOF reached");
-//    return -1;
-//  }
+  if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+    println("EOF reached");
+
+    // TODO Zero out the bytes between wrPtr and filesize
+    // TODO If new cluster we need to add cluster info in FAT
+  }
 
   int len = 0; // number of bytes written
 
@@ -663,11 +730,7 @@ int FAT_WriteFile(int file, const uint8_t* data, int count) {
     *ptr++ = data[i];
     openedFiles[file].wrPtr++;
     len++;
-    // check if EOF reached
-    if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
-      // if writing to end of file - increment filesize
-      openedFiles[file].fileSize = openedFiles[file].wrPtr;
-    }
+
     // if sector boundary reached
     if (openedFiles[file].wrPtr % 512 == 0) {
       println("Write file: new sector");
@@ -682,12 +745,25 @@ int FAT_WriteFile(int file, const uint8_t* data, int count) {
       // if first sector, then read new cluster
       if (sectorOffset == 0) {
         println("Write file: jump to next cluster");
+
+        if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+          // TODO If new cluster then update FAT
+          //        FAT_UpdateCluster();
+        }
+
         // change cluster to next
         FAT_GetCluster(baseCluster, 1, &baseCluster);
+
       }
       baseSector = FAT_Cluster2Sector(baseCluster) + sectorOffset;
       FAT_ReadSector(baseSector);
       ptr = buf;
+    }
+
+    // check if EOF reached and update file size
+    if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+      // if writing to end of file - increment filesize
+      openedFiles[file].fileSize = openedFiles[file].wrPtr;
     }
   }
 
@@ -926,12 +1002,40 @@ static int FAT_FindFile(FAT_File* file) {
       file->rootDirEntry = i-1;
       println("File root dir entry = %u", (unsigned int)file->rootDirEntry);
 
+      FAT_DateFormat date;
+      date.date = file->lastModifiedDate;
+
+      FAT_TimeFormat time;
+      time.time = file->lastModifiedTime;
+
       file->rdPtr = 0; // start reading from 1st byte
       file->wrPtr = 0; // start writing from 1st byte
 
       println("Found file %s of size %u, ID = %u!!!",
           file->filename, (unsigned int)file->fileSize,
           (unsigned int)file->id);
+      println("File created on %02u.%02u.%04u at %02u:%02u:%02u",
+          date.fields.day,date.fields.month, date.fields.year+1980,
+          time.fields.hours, time.fields.minutes, time.fields.seconds*2);
+
+      FAT_LongDirEntry *longEntry = (FAT_LongDirEntry *)(dirEntry - 1);
+
+      uint16_t longFilename[14];
+
+      uint16_t* namePtr = longFilename;
+
+      for (int i = 0; i < 5; i++) {
+        *namePtr++ = longEntry->name1[i];
+      }
+      for (int i = 0; i < 6; i++) {
+        *namePtr++ = longEntry->name2[i];
+      }
+      for (int i = 0; i < 2; i++) {
+        *namePtr++ = longEntry->name3[i];
+      }
+      *namePtr = 0;
+      println("Long file name");
+      hexdump16C(longFilename, 14);
 
       return file->id;
     }
