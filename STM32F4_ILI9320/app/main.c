@@ -124,10 +124,12 @@ int main(void) {
 
   FAT_Init(SD_Init, SD_ReadSectors, SD_WriteSectors);
   int hello = FAT_OpenFile("HELLO   TXT");
-  uint8_t data[50];
+  uint8_t data[100];
+
+  FAT_MoveRdPtr(hello, 500);
 
   int i = FAT_ReadFile(hello, data, 5);
-  i += FAT_ReadFile(hello, data+i, 10);
+  i += FAT_ReadFile(hello, data+i, 60);
   hexdumpC(data, i);
 
   int hamlet = FAT_OpenFile("HAMLET  TXT");
@@ -142,7 +144,11 @@ int main(void) {
     data[k] = 'y';
   }
 
-  FAT_WriteFile(hello, data, 5);
+  char message[] = "Hello world, from STM32 to FAT driver"; // length 37
+
+  FAT_MoveWrPtr(hello, 500);
+
+  FAT_WriteFile(hello, (uint8_t*)message, strlen(message));
 
   GUI_Init();
 

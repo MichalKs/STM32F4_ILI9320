@@ -497,10 +497,10 @@ int FAT_MoveWrPtr(int file, int newWrPtr) {
   }
   // TODO If new ptr value is larger than file size - zero pad
   // Can't move beyond length of file for read
-  if (newWrPtr > openedFiles[file].fileSize) {
-    println("EOF reached");
-    return -1;
-  }
+//  if (newWrPtr > openedFiles[file].fileSize) {
+//    println("EOF reached");
+//    return -1;
+//  }
 
   openedFiles[file].wrPtr = newWrPtr;
   return newWrPtr;
@@ -607,7 +607,7 @@ int FAT_ReadFile(int file, uint8_t* data, int count) {
  * TODO Make this cross sector and cluster boundaries
  * FIXME For now we can write only up to EOF
  */
-int FAT_WriteFile(int file, uint8_t* data, int count) {
+int FAT_WriteFile(int file, const uint8_t* data, int count) {
 
   println("Write file function");
 
@@ -624,10 +624,10 @@ int FAT_WriteFile(int file, uint8_t* data, int count) {
   }
   // We have already reached EOF
   // TODO Make this cross EOF - adding more data - change file size in root dir
-  if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
-    println("EOF reached");
-    return -1;
-  }
+//  if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
+//    println("EOF reached");
+//    return -1;
+//  }
 
   int len = 0; // number of bytes written
 
@@ -665,8 +665,8 @@ int FAT_WriteFile(int file, uint8_t* data, int count) {
     len++;
     // check if EOF reached
     if (openedFiles[file].wrPtr >= openedFiles[file].fileSize) {
-      println("EOF reached");
-      break;
+      // if writing to end of file - increment filesize
+      openedFiles[file].fileSize = openedFiles[file].wrPtr;
     }
     // if sector boundary reached
     if (openedFiles[file].wrPtr % 512 == 0) {
@@ -737,10 +737,11 @@ static void FAT_UpdateRootEntry(int file) {
     filename[k] = *namePtr++;
   }
   filename[11] = 0; // end string
+  dirEntry->fileSize = openedFiles[file].fileSize;
 
-  println("Updating root entry for file: %s", filename);
+  println("Updating root entry for file: %s, size %u",
+      filename, (unsigned int)openedFiles[file].fileSize);
 
-  dirEntry->fileSize = 20;
   FAT_WriteSector(sector);
 
 }
