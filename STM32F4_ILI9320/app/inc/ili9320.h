@@ -20,10 +20,23 @@
 
 #include <inttypes.h>
 
+/**
+ * @defgroup  ILI9320 ILI9320
+ * @brief     ILI9320 TFT LCD library
+ */
+
+/**
+ * @addtogroup ILI9320
+ * @{
+ */
+
 void ILI9320_Initializtion(void);
 void ILI9320_SetWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 void ILI9320_DrawPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b);
 uint16_t ILI9320_RGBDecode(uint8_t r, uint8_t g, uint8_t b);
 
+/**
+ * @}
+ */
 
 #endif /* ILI9320_H_ */

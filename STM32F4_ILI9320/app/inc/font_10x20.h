@@ -1,6 +1,6 @@
 /**
  * @file    font_10x20.h
- * @brief	  
+ * @brief
  * @date    13 gru 2014
  * @author  Michal Ksiezopolski
  *

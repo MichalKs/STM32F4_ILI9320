@@ -1,6 +1,6 @@
 /**
  * @file    tsc2046.c
- * @brief	  
+ * @brief   TSC2046 touchscreen library
  * @date    14 gru 2014
  * @author  Michal Ksiezopolski
  *
@@ -34,31 +34,36 @@
 #define println(str, args...) (void)0
 #endif
 
+/**
+ * @addtogroup TSC2046
+ * @{
+ */
+
 /*
  * Settings of the analog input pins
  */
-#define MEASURE_TEMP0   0b000
-#define MEASURE_Y       0b001
-#define MEASURE_VBAT    0b010
+#define MEASURE_TEMP0   0b000 ///< Measure temperature
+#define MEASURE_Y       0b001 ///< Measure Y position
+#define MEASURE_VBAT    0b010 ///< Measure battery voltage
 #define MEASURE_Z1      0b011
 #define MEASURE_Z2      0b100
-#define MEASURE_X       0b101
+#define MEASURE_X       0b101 ///< Measure X position
 #define MEASURE_AUX     0b110
-#define MEASURE_TEMP1   0b111
+#define MEASURE_TEMP1   0b111 ///< Measure temperature
 
-#define MODE_8BIT   1
-#define MODE_12BIT  0
+#define MODE_8BIT   1 ///< 8-bit data mode
+#define MODE_12BIT  0 ///< 12-bit data mode
 
-#define SINGLE_ENDED 1
-#define DIFFERENTIAL 0
+#define SINGLE_ENDED 1 ///< Single ended measurement
+#define DIFFERENTIAL 0 ///< Differential measurement
 
-#define PD_POWER_DOWN 0b00
-#define PD_VREF_OFF   0b01
-#define PD_ADC_OFF    0b10
-#define PD_ALWAYS_ON  0b11
+#define PD_POWER_DOWN 0b00 ///< Power down mode
+#define PD_VREF_OFF   0b01 ///< Turn off Vref
+#define PD_ADC_OFF    0b10 ///< Turn off ADC
+#define PD_ALWAYS_ON  0b11 ///< No power down
 
-#define DEBOUNCE_TIME 20
-#define WAIT_TIME 100
+#define DEBOUNCE_TIME 20 ///< Debounce time for touchsreen
+#define WAIT_TIME 100 ///<
 
 /**
  * @brief Control byte
@@ -80,7 +85,7 @@ typedef union {
   uint8_t byte;
 } ControlByteTypedef;
 
-#define MAX_EVENTS 20
+#define MAX_EVENTS 20 ///< Maximum number of registered events
 /**
  * @brief Structure for defining an event triggered but touching
  * a specific region of the touchscreen.
@@ -133,10 +138,10 @@ void TSC2046_Init(void) {
  * @brief Registers a given region of the touchscreen
  * to trigger an event.
  *
- * @param x
- * @param y
- * @param w
- * @param h
+ * @param x X position of starting point of region
+ * @param y Y position of starting point of region
+ * @param w Width of region
+ * @param h Height of region
  * @param cb Callback function for event.
  * @return Current event index or -1 in case of error.
  */
@@ -165,7 +170,6 @@ int TSC2046_RegisterEvent(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
  * @details Call this function regularly in main to handle
  * touchscreen events.
  *
- * FIXME Just test for now
  */
 void TSC2046_Update(void) {
 
@@ -254,3 +258,7 @@ void TSC2046_ReadPos(uint16_t *x, uint16_t *y) {
 static void penirqCallback(void) {
   penirqAsserted = 1;
 }
+
+/**
+ * @}
+ */

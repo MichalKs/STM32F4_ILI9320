@@ -24,6 +24,11 @@
 #include <stdio.h>
 #include <ili9320_hal.h>
 
+/**
+ * @addtogroup ILI9320
+ * @{
+ */
+
 /*
  * ILI9320 driver commands/registers
  */
@@ -78,7 +83,6 @@
 #define ILI9320_PANEL_INTERFACE4  0x95
 #define ILI9320_PANEL_INTERFACE5  0x97
 #define ILI9320_PANEL_INTERFACE6  0x98
-
 
 uint16_t ILI9320_RGBDecode(uint8_t r, uint8_t g, uint8_t b);
 
@@ -155,9 +159,6 @@ void ILI9320_Initializtion(void) {
 
   TIMER_Delay(100);
 }
-
-
-
 /**
  * @brief Convert RGB value to ILI9320 format.
  * @param r Red
@@ -168,7 +169,6 @@ void ILI9320_Initializtion(void) {
 uint16_t ILI9320_RGBDecode(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0x1f) << 11) | ((g & 0x3f) << 5) | (b & 0x1f);
 }
-
 /**
  * @brief Move cursor to given coordinates.
  * @param x X coordinate
@@ -209,3 +209,6 @@ void ILI9320_SetWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height) 
   ILI9320_HAL_WriteReg(ILI9320_VER_ADDR_END, x + width - 1);
 }
 
+/**
+ * @}
+ */

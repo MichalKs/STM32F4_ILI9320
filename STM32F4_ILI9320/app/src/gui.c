@@ -1,6 +1,6 @@
 /**
  * @file    gui.c
- * @brief	  
+ * @brief   Graphical user interface library for touchscreen and TFT LCD
  * @date    16 gru 2014
  * @author  Michal Ksiezopolski
  *
@@ -20,6 +20,11 @@
 #include <graphics.h>
 #include <tsc2046.h>
 #include <font_8x16.h>
+
+/**
+ * @addtogroup GUI
+ * @{
+ */
 
 static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *h);
 
@@ -123,3 +128,6 @@ static void GUI_ConvertLCD2TSC(uint16_t *x, uint16_t *y, uint16_t *w, uint16_t *
 
 }
 
+/**
+ * @}
+ */

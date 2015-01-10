@@ -1,8 +1,8 @@
 /**
- * @file:   sdcard.c
- * @brief:  SD card control functions.
- * @date:   22 kwi 2014
- * @author: Michal Ksiezopolski
+ * @file    sdcard.c
+ * @brief   SD card control functions.
+ * @date    22 kwi 2014
+ * @author  Michal Ksiezopolski
  * 
  * @verbatim
  * Copyright (c) 2014 Michal Ksiezopolski.
@@ -19,6 +19,7 @@
 #include <spi1.h>
 #include <timers.h>
 #include <stdio.h>
+#include <utils.h>
 
 /**
  * @addtogroup SD_CARD
@@ -92,9 +93,6 @@
 #define SD_TOKEN_DATA_CRC       0x0b ///< Data rejected due to CRC error
 #define SD_TOKEN_DATA_WRITE_ERR 0x0d ///< Data rejected due to write error
 
-static uint8_t SD_SendCommand(uint8_t cmd, uint32_t args);
-static void SD_GetResponseR3orR7(uint8_t* buf);
-
 #define SD_HAL_Init         SPI1_Init
 #define SD_HAL_SelectCard   SPI1_Select
 #define SD_HAL_DeselectCard SPI1_Deselect
@@ -103,6 +101,7 @@ static void SD_GetResponseR3orR7(uint8_t* buf);
 #define SD_HAL_WriteBuffer  SPI1_WriteBuffer
 
 static uint8_t isSDHC; ///< Is the card SDHC?
+static uint64_t cardCapacity; ///< Capacity of SD card in bytes
 
 /**
  * @brief SD Card R1 response structure
@@ -124,7 +123,6 @@ typedef union {
 
   uint8_t responseR1; ///< R1 response fields as byte
 } SD_ResponseR1;
-
 /**
  * @brief SD Card R2 response structure
  * @details This token is sent in response to SEND_STATUS command.
@@ -154,9 +152,8 @@ typedef union {
   uint16_t responseR2; ///< R1 response fields as byte
 
 } SD_ResponseR2;
-
 /**
- * @brief OCR register
+ * @brief Operation conditions register
  */
 typedef union {
 
@@ -180,6 +177,79 @@ typedef union {
   uint32_t ocr;
 
 } SD_OCR;
+/**
+ * @brief Card Identification Register
+ */
+typedef struct {
+
+  uint8_t manufacturerID;
+  uint8_t applicationID[2];
+  uint8_t name[5];
+  uint8_t revision;
+  uint8_t serial[4];
+  uint8_t manufacturingDate[2];
+  uint8_t crc;
+
+} __attribute((packed)) SD_CID;
+/**
+ * @brief Card specific data register
+ * @details The data comes MSB first. In C in a bit array corresponds
+ * to the least significant bit.
+ *
+ * TODO Add version of this register for SDSC cards
+ */
+typedef struct {
+
+  // fourth uint32_t
+    uint32_t reserved1   :1;
+    uint32_t crc :7;
+    uint32_t reserved2 :2;
+    uint32_t fileFormat :2;
+    uint32_t tmpWrtProtect :1;
+    uint32_t permWrtProtect :1;
+    uint32_t copyFlag :1;
+    uint32_t fileFmtGrp :1;
+
+    uint32_t reserved3 :5;
+    uint32_t partialBlkWrt :1;
+    uint32_t maxWrtBlkLen :4;
+    uint32_t wrtSpeed :3;
+    uint32_t reserved4 :2;
+    uint32_t wrtProtectEna :1;
+
+  // third uint32_t
+    uint32_t wrtProtectSize :7;
+    uint32_t sectorSize :7;
+    uint32_t eraseSingleBlkEna :1;
+    uint32_t reserved5 :1;
+    uint32_t deviceSize :22; ///< Capacity of the card
+//    uint32_t deviceSize1 :16;
+
+  // second uint32_t
+//    uint32_t deviceSize2 :6;
+    uint32_t reserved6 : 6;
+    uint32_t DSR :1;
+    uint32_t rdBlkMisalign :1;
+    uint32_t wrtBlkMisalign :1;
+    uint32_t rdBlkPartial :1;
+
+    uint32_t maxReadLen :4;
+    uint32_t cardCommandClass :12;
+
+  // first uint32_t
+    uint32_t maxDataRate :8;
+    uint32_t dataRdCycles:8;
+    uint32_t dataRdTime :8;
+    uint32_t reserved7 :6;
+    uint32_t csdType :2;  ///< Type of the structure
+
+} __attribute((packed)) SD_CSD;
+
+static uint8_t SD_SendCommand(uint8_t cmd, uint32_t args);
+static void SD_GetResponseR3orR7(uint8_t* buf);
+static SD_ResponseR1 SD_ReadOCR(SD_OCR* ocr);
+static void SD_ReadCID(SD_CID* cid);
+static void SD_ReadCSD(SD_CSD* csd);
 
 /**
  * @brief Initialize the SD card.
@@ -192,6 +262,7 @@ void SD_Init(void) {
 
   int i; // for counter
   uint8_t buf[10]; // buffer for responses
+  SD_OCR ocr;
 
   SD_HAL_Init(); // Initialize SPI interface.
 
@@ -235,21 +306,12 @@ void SD_Init(void) {
   }
 
   // CMD58
-  resp.responseR1 = SD_SendCommand(SD_READ_OCR, 0);
-
-  SD_GetResponseR3orR7(buf);
+  resp = SD_ReadOCR(&ocr);;
 
   // Check response errors
   if (resp.responseR1 != 0x01) {
     println("READ_OCR error");
   }
-
-  // Send OCR to terminal
-//  print("OCR value: ");
-//  for (i=0; i<4; i++) {
-//    print("%02x ", buf[i]);
-//  }
-//  print("\r\n");
 
   // Send ACMD41 until card goes out of IDLE state
   for (i=0; i<10; i++) {
@@ -269,24 +331,22 @@ void SD_Init(void) {
     }
   }
 
-  // Read Card Capacity Status - SDSC or SDHC?
-  resp.responseR1 = SD_SendCommand(SD_READ_OCR, 0);
-  SD_GetResponseR3orR7(buf);
+  // read CID
+  SD_CID cid;
+  SD_ReadCID(&cid);
+  // read CSD to get card capacity
+  SD_CSD csd;
+  SD_ReadCSD(&csd);
 
-  // Check response errors
+  // Read Card Capacity Status - SDSC or SDHC?
+  resp = SD_ReadOCR(&ocr);
+
   if (resp.responseR1 != 0x00) {
-    println("SD_READ_OCR error");
+    println("READ_OCR error");
   }
 
-  // Send OCR to terminal
-//  print("OCR value: ");
-//  for (i=0; i<4; i++) {
-//    print("%02x ", buf[i]);
-//  }
-//  print("\r\n");
-
   // check capacity
-  if (buf[0] & 0x40) {
+  if (ocr.bits.cardCapacityStatus == 1) {
     println("SDHC card connected");
     isSDHC = 1;
   } else {
@@ -296,6 +356,14 @@ void SD_Init(void) {
 
   SD_HAL_DeselectCard();
 
+}
+/**
+ * @brief Gets the capacity of the card.
+ * @return Card capacity in bytes.
+ */
+uint64_t SD_ReadCapacity(void) {
+
+  return cardCapacity;
 }
 /**
  * @brief Read sectors from SD card
@@ -392,6 +460,124 @@ uint8_t SD_WriteSectors(uint8_t* buf, uint32_t sector, uint32_t count) {
   return 0;
 }
 /**
+ * @brief Reads OCR register
+ *
+ * @details Returns response because it is called before and after
+ * leaving the IDLE state, so we can't check response in the function.
+ * Check the response externally.
+ *
+ * @return OCR register value
+ */
+static SD_ResponseR1 SD_ReadOCR(SD_OCR* ocr) {
+
+  uint8_t tmp[4];
+
+  SD_ResponseR1 resp; // response R1
+
+  resp.responseR1 = SD_SendCommand(SD_READ_OCR, 0);
+  // OCR has more data
+  SD_GetResponseR3orR7(tmp);
+
+  // SD sends this commands MSB first
+  // so reverse byte order
+  uint32_t* ptr = (uint32_t*)ocr;
+  uint32_t* ptrBuf = (uint32_t*)tmp;
+
+  *ptr = ntohl(*ptrBuf); // convert to little endian if necessary
+
+  // Send OCR to terminal
+  print("OCR value: ");
+  for (int i = 0; i < 4; i++) {
+    print("%02x ", tmp[i]);
+  }
+  print("\r\n");
+
+  return resp;
+}
+/**
+ * @brief Read CID register of SD card
+ * @param cid Structure for filling CID register.
+ */
+static void SD_ReadCID(SD_CID* cid) {
+
+  uint8_t buf[16];
+  SD_ResponseR1 resp;
+
+  resp.responseR1 = SD_SendCommand(SD_SEND_CID, 0);
+
+  if (resp.responseR1 != 0x00) {
+    println("SD_SEND_CID error");
+    return;
+  }
+
+  // Read CID implemented as read block
+  // So do the same as for read block
+  while (SD_HAL_TransmitData(0xff) != SD_TOKEN_SBR_MBR_SBW); // wait for data token
+  SD_HAL_ReadBuffer(buf, 16);
+  SD_HAL_TransmitData(0xff);
+  SD_HAL_TransmitData(0xff); // two bytes CRC
+
+  uint8_t* ptr = (uint8_t*)cid;
+  for (int i = 0; i < 16; i++) {
+    ptr[i] = buf[i];
+  }
+
+  hexdumpC(buf, 16);
+
+  // R1b response - check busy flag
+  while(!SD_HAL_TransmitData(0xff));
+
+}
+/**
+ * @brief Read CSD register of SD card
+ *
+ * @details This function also sets the cardCapacity
+ * variable holding the capacity of the card in bytes.
+ *
+ * @param csd Structure for filling CSD register.
+ */
+static void SD_ReadCSD(SD_CSD* csd) {
+
+  uint8_t buf[16];
+  SD_ResponseR1 resp;
+
+  resp.responseR1 = SD_SendCommand(SD_SEND_CSD, 0);
+
+  if (resp.responseR1 != 0x00) {
+    println("SD_SEND_CSD error");
+    return;
+  }
+
+  // Read CID implemented as read block
+  // So do the same as for read block
+  while (SD_HAL_TransmitData(0xff) != SD_TOKEN_SBR_MBR_SBW); // wait for data token
+  SD_HAL_ReadBuffer(buf, 16);
+  SD_HAL_TransmitData(0xff);
+  SD_HAL_TransmitData(0xff); // two bytes CRC
+
+  uint32_t* ptr = (uint32_t*)csd;
+  uint32_t* ptrBuf = (uint32_t*)buf;
+
+  for (int i = 0; i < 4; i++) {
+    ptr[i] = ntohl(ptrBuf[3-i]); // convert to little endian if necessary
+  }
+
+  hexdumpC(buf, 16);
+
+  println("CSD type: 0x%02x", (unsigned int) csd->csdType);
+  println("CSD device size: %u", (unsigned int) csd->deviceSize);
+
+  // size counted in blocks of 512K
+  cardCapacity = csd->deviceSize * 512 * 1024;
+  // the newlib implementation of printf seems to have problems
+  // with %llu format
+  println("Card capacity: %u", (unsigned int)cardCapacity);
+
+  // R1b response - check busy flag
+  while(!SD_HAL_TransmitData(0xff));
+
+}
+/**
  * @brief Sends a command to the SD card.
  *
  * @details This function works for commands which return 1 byte
@@ -429,7 +615,6 @@ static uint8_t SD_SendCommand(uint8_t cmd, uint32_t args) {
 
   return ret;
 }
-
 /**
  * @brief Get R3 or R7 response from card
  *

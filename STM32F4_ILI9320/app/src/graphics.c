@@ -23,6 +23,11 @@
 #include <math.h>
 
 /**
+ * @addtogroup GRAPHICS
+ * @{
+ */
+
+/**
  * @brief Structure containing information about
  * an image.
  *
@@ -125,7 +130,6 @@ void GRAPH_SetFont(GRAPH_FontStruct font) {
 
   currentFont = font;
 }
-
 /**
  * @brief Sets the global color variable.
  *
@@ -235,9 +239,7 @@ void GRAPH_DrawString(const char* s, uint16_t x, uint16_t y) {
   for (int i = 0; i < len; i++, y+=currentFont.columnCount) {
     GRAPH_DrawChar(s[i], x, y);
   }
-
 }
-
 /**
  * @brief Draws a rectangle (filled).
  * @param x X coordinate of start point
@@ -270,7 +272,6 @@ void GRAPH_DrawBox(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t lineW
   GRAPH_DrawRectangle(x+lineWidth, y, w-2*lineWidth, lineWidth);
   GRAPH_DrawRectangle(x+w-lineWidth, y, lineWidth, h);
   GRAPH_DrawRectangle(x+lineWidth, y+h-lineWidth, w-2*lineWidth, lineWidth);
-
 }
 /**
  * @brief Draws a graph portraying data (measurements, etc.).
@@ -321,7 +322,6 @@ void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y) 
   }
 
   GRAPH_SetFont(tmp); // restore font
-
 }
 /**
  * @brief Draws a bar chart portraying data (measurements, etc.).
@@ -345,7 +345,6 @@ void GRAPH_DrawBarChart(const uint8_t* data, uint16_t len,
     // draw pixels up and down to make line more visible
     GRAPH_DrawRectangle(pos, 0, width, data[i]);
   }
-
 }
 /**
  * @brief Draws a circle
@@ -399,7 +398,6 @@ void GRAPH_DrawFilledCircle(uint16_t x, uint16_t y, uint16_t radius) {
   while (radius--) {
     GRAPH_DrawCircle(x,y,radius);
   }
-
 }
 /**
  * @brief This function draws a line.
@@ -440,7 +438,6 @@ void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
       y1 += sy;
     }
   }
-
 //  double x, y, dx, dy;
 //  dx = x2 - x1; // Change in X
 //  dy = y2 - y1; // Change in Y
@@ -451,3 +448,6 @@ void GRAPH_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
 //  }
 }
 
+/**
+ * @}
+ */

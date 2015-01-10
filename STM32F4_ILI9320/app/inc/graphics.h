@@ -1,8 +1,8 @@
 /**
- * @file: 	graphics.h
- * @brief:	Graphic library for TFT LCD.
- * @date: 	28 maj 2014
- * @author: Michal Ksiezopolski
+ * @file    graphics.h
+ * @brief   Graphic library for TFT LCD.
+ * @date    28 maj 2014
+ * @author  Michal Ksiezopolski
  * 
  * @verbatim
  * Copyright (c) 2014 Michal Ksiezopolski.
@@ -20,6 +20,15 @@
 
 #include <inttypes.h>
 
+/**
+ * @defgroup  GRAPHICS GRAPHICS
+ * @brief     Graphics library
+ */
+
+/**
+ * @addtogroup GRAPHICS
+ * @{
+ */
 
 /**
  * @brief Structure containing information about
@@ -60,5 +69,9 @@ void GRAPH_DrawImage(uint16_t x, uint16_t y);
 void GRAPH_DrawGraph(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y);
 void GRAPH_DrawBarChart(const uint8_t* data, uint16_t len, uint16_t x, uint16_t y, uint16_t width);
 void GRAPH_SetFont(GRAPH_FontStruct font);
+
+/**
+ * @}
+ */
 
 #endif /* GRAPHICS_H_ */
