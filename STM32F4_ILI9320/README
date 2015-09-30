@@ -31,7 +31,15 @@ no board). All the data and control lines work on 3V.
    * WR=FSMC_NWE - PD5 (write enable)
    * CS=FSMC_NE1 - PD7 (chip select)
    * RS=FSMC_A16 - PD11 (register select)
-   * REST        - PB7 (reset pin)
+   * REST        - PB4 (reset pin)
+   
+   
+   Pin mapping for touchscreen:
+   T_CLK 	- PC10 (SCK)
+   T_CS 	- PA15
+   T_DIN 	- PA12 (MOSI)
+   T_DO		- PA11 (MISO)
+   T_IRQ	- PD2 
    
    
 TFT_320QVT also contains an SD card slot and a touch screen

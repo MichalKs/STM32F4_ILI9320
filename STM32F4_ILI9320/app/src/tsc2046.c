@@ -113,6 +113,13 @@ void TSC2046_ReadPos(uint16_t *x, uint16_t *y);
  */
 void TSC2046_Init(void) {
 
+//  Pin mapping for touchscreen:
+//  T_CLK  - PC10 (SCK)
+//  T_CS   - PA15
+//  T_DIN  - PA12 (MOSI)
+//  T_DO   - PA11 (MISO)
+//  T_IRQ  - PD2
+
   // initialize SPI interface
   SPI3_Init();
   // initialize PENIRQ signal handling

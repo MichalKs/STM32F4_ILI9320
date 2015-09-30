@@ -51,6 +51,9 @@ void tscEvent2(uint16_t x, uint16_t y);
 #define println(str, args...) (void)0
 #endif
 
+//#define TEST_SD
+//#define USE_GUI
+
 /**
  * @brief Main function
  * @return Whatever
@@ -78,50 +81,58 @@ int main(void) {
   // test another way of measuring time delays
   uint32_t softTimer = TIMER_GetTime(); // get start time for delay
 
-//  GRAPH_Init();
 
-//  GRAPH_SetColor(0x00, 0x00, 0xff);
-//  GRAPH_SetBgColor(0xff, 0x00, 0x00);
-//  GRAPH_DrawBox(100, 100, 100, 100, 5);
-//  GRAPH_DrawFilledCircle(50, 50, 50);
-//  GRAPH_SetColor(0xff, 0xff, 0xff);
-//  GRAPH_SetFont(font21x39Info);
-//  GRAPH_DrawChar('A', 120, 50);
-//  GRAPH_DrawString("Hello World", 200, 0);
-//  GRAPH_SetFont(font14x27Info);
-//  GRAPH_DrawString("A mouse is", 240, 0);
-//  GRAPH_SetFont(font10x20Info);
-//  GRAPH_DrawString("not a lion.", 280, 0);
-//  GRAPH_SetFont(font8x16Info);
-//  GRAPH_DrawString("To be or not to be", 170, 0);
+#ifndef USE_GUI
+
+  GRAPH_Init();
+
+  GRAPH_SetColor(0x00, 0x00, 0xff);
+  GRAPH_SetBgColor(0xff, 0x00, 0x00);
+  GRAPH_DrawBox(100, 100, 100, 100, 5);
+  GRAPH_DrawFilledCircle(50, 50, 50);
+  GRAPH_SetColor(0xff, 0xff, 0xff);
+  GRAPH_SetFont(font21x39Info);
+  GRAPH_DrawChar('A', 120, 50);
+  GRAPH_DrawString("Hello World", 200, 0);
+  GRAPH_SetFont(font14x27Info);
+  GRAPH_DrawString("A mouse is", 240, 0);
+  GRAPH_SetFont(font10x20Info);
+  GRAPH_DrawString("not a lion.", 280, 0);
+  GRAPH_SetFont(font8x16Info);
+  GRAPH_DrawString("To be or not to be", 170, 0);
 
   // draw image test
-//  TIMER_Delay(3000);
-//  GRAPH_ClrScreen(0, 0, 0);
-//  GRAPH_DrawImage(30, 30);
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GRAPH_DrawImage(30, 30);
 
   // data for example graph - sinusoidal signal
-//  uint8_t graphData[320];
-//  double x = 0.0;
-//
-//  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
-//    graphData[i] = (uint8_t)(sin(x)*100 + 100);
-//  }
-//
-//  TIMER_Delay(3000);
-//  GRAPH_ClrScreen(0, 0, 0);
-//  GRAPH_DrawGraph(graphData, 290, 0, 0);
+  uint8_t graphData[320];
+  double x = 0.0;
 
-  // draw example bar chart
-//  TIMER_Delay(3000);
-//  GRAPH_ClrScreen(0, 0, 0);
-//  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
+  for (int i = 0; i < 320; i++, x+=0.01*M_PI) {
+    graphData[i] = (uint8_t)(sin(x)*100 + 100);
+  }
+
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GRAPH_DrawGraph(graphData, 290, 0, 0);
+
+//   draw example bar chart
+  TIMER_Delay(3000);
+  GRAPH_ClrScreen(0, 0, 0);
+  GRAPH_DrawBarChart(graphData+30, 32, 0, 0, 5);
 
 
+  TSC2046_Init();
   // register an event for a given region
-//  TSC2046_RegisterEvent(0, 0, 1500, 4000, tscEvent1);
-//  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
+  TSC2046_RegisterEvent(0, 0, 1500, 4000, tscEvent1);
+  TSC2046_RegisterEvent(0, 0, 4000, 1500, tscEvent2);
 
+#endif
+
+
+#ifdef TEST_SD
   FAT_Init(SD_Init, SD_ReadSectors, SD_WriteSectors);
   int hello = FAT_OpenFile("HELLO   TXT");
   uint8_t data[100];
@@ -149,11 +160,16 @@ int main(void) {
   FAT_MoveWrPtr(hello, 500);
 
   FAT_WriteFile(hello, (uint8_t*)message, strlen(message));
+#endif
 
+
+#ifdef USE_GUI
   GUI_Init();
 
   GUI_AddButton(50, 50, 50, 100, tscEvent1, "LED 0");
   GUI_AddButton(200, 50, 50, 100, tscEvent2, "LED 1");
+
+#endif
 
   while (1) {
 

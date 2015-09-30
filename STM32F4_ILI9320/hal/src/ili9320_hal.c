@@ -63,7 +63,7 @@ void ILI9320_HAL_HardInit(void) {
    * FSMC_NWE - PD5 - WR
    * FSMC_NE1 - PD7 - CS
    * FSMC_A16 - PD11 - RS
-   * RESET  - PB7
+   * RESET  - PB4
    * **************************************************
    */
 
