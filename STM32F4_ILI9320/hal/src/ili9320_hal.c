@@ -18,6 +18,7 @@
 
 #include <stm32f4xx.h>
 #include <ili9320_hal.h>
+#include <stdio.h>
 
 #define ILI9320_RST_PORT  GPIOB                 ///< GPIO for reset pin
 #define ILI9320_RST_PIN   GPIO_Pin_4            ///< Reset pin
@@ -116,8 +117,42 @@ void ILI9320_HAL_HardInit(void) {
 
   // Enable FSMC
   RCC_AHB3PeriphClockCmd(RCC_AHB3Periph_FSMC, ENABLE);
-  FSMC_Bank1->BTCR[0] = FSMC_BCR2_MBKEN | FSMC_BCR2_MWID_0 | FSMC_BCR1_WREN;
-  FSMC_Bank1->BTCR[1] = 0x1404;
+//  printf("%s 0x%08x\r\n", __FUNCTION__, (unsigned int)FSMC_Bank1->BTCR[0]);
+//  FSMC_Bank1->BTCR[0] = FSMC_BCR1_MBKEN | FSMC_BCR1_MWID_0 | FSMC_BCR1_WREN;
+//  printf("%s 0x%08x\r\n", __FUNCTION__, (unsigned int)FSMC_Bank1->BTCR[0]);
+//  FSMC_Bank1->BTCR[1] = 0x1404;
+
+  FSMC_NORSRAMInitTypeDef  FSMC_NORSRAM_InitStructure;
+  FSMC_NORSRAMTimingInitTypeDef FSMC_NORSRAM_Timing;
+
+  FSMC_NORSRAM_Timing.FSMC_AddressSetupTime       = 0x04;
+  FSMC_NORSRAM_Timing.FSMC_AddressHoldTime        = 0x00;
+  FSMC_NORSRAM_Timing.FSMC_DataSetupTime          = 0x14;
+  FSMC_NORSRAM_Timing.FSMC_BusTurnAroundDuration  = 0x00;
+  FSMC_NORSRAM_Timing.FSMC_CLKDivision            = 0x00;
+  FSMC_NORSRAM_Timing.FSMC_DataLatency            = 0x00;
+  FSMC_NORSRAM_Timing.FSMC_AccessMode             = FSMC_AccessMode_B;
+
+  FSMC_NORSRAM_InitStructure.FSMC_Bank                  = FSMC_Bank1_NORSRAM1;
+  FSMC_NORSRAM_InitStructure.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_MemoryType            = FSMC_MemoryType_NOR;
+  FSMC_NORSRAM_InitStructure.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;
+  FSMC_NORSRAM_InitStructure.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_Low;
+  FSMC_NORSRAM_InitStructure.FSMC_WrapMode              = FSMC_WrapMode_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
+  FSMC_NORSRAM_InitStructure.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;
+  FSMC_NORSRAM_InitStructure.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_ExtendedMode          = FSMC_ExtendedMode_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;
+  FSMC_NORSRAM_InitStructure.FSMC_ReadWriteTimingStruct = &FSMC_NORSRAM_Timing;
+  FSMC_NORSRAM_InitStructure.FSMC_WriteTimingStruct     = &FSMC_NORSRAM_Timing;
+
+  FSMC_NORSRAMInit(&FSMC_NORSRAM_InitStructure);
+
+  /* Enable FSMC Bank1_SRAM Bank */
+  FSMC_NORSRAMCmd(FSMC_Bank1_NORSRAM1, ENABLE);
+
 }
 
 /**
