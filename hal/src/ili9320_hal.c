@@ -19,14 +19,17 @@
 #include <stm32f4xx.h>
 #include <ili9320_hal.h>
 #include <stdio.h>
+#include "common_hal.h"
 
 #define ILI9320_RST_PORT  GPIOB                 ///< GPIO for reset pin
-#define ILI9320_RST_PIN   GPIO_Pin_4            ///< Reset pin
-#define ILI9320_RST_CLK   RCC_AHB1Periph_GPIOB  ///< Clock for reset pin
+#define ILI9320_RST_PIN   GPIO_PIN_4            ///< Reset pin
+#define ILI9320_RST_CLK_ENABLE()   __HAL_RCC_GPIOB_CLK_ENABLE()  ///< Clock for reset pin
 
 #define ILI9320_REG       (*((volatile unsigned short *) 0x60000000)) ///< Address for writing register number
 #define ILI9320_DATA      (*((volatile unsigned short *) 0x60020000)) ///< Address for writing data
 
+SRAM_HandleTypeDef hsram;
+FSMC_NORSRAM_TimingTypeDef timing;
 
 /**
  * @brief Initialize ILI9320 hardware layer.
@@ -36,13 +39,13 @@ void ILI9320_HAL_HardInit(void) {
   GPIO_InitTypeDef GPIO_InitStructure;
 
   // Enable GPIO clocks
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
-  RCC_AHB1PeriphClockCmd(ILI9320_RST_CLK, ENABLE);
+  ILI9320_RST_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*
    * **************************************************
-   * Pin mapping:
+   * PIN mapping:
    *
    * FSMC_D0  - PD14
    * FSMC_D1  - PD15
@@ -69,89 +72,99 @@ void ILI9320_HAL_HardInit(void) {
    */
 
   // FSMC pins as AF
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource0, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource1, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource4, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource7, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource8, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource9, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource10, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource11, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_FSMC);
 
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource7, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource8, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource9, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource10, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource11, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource12, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource13, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource14, GPIO_AF_FSMC);
-  GPIO_PinAFConfig(GPIOE, GPIO_PinSource15, GPIO_AF_FSMC);
+  GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 |
+      GPIO_PIN_5 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 |
+      GPIO_PIN_11 | GPIO_PIN_14 | GPIO_PIN_15;
+  GPIO_InitStructure.Mode   = GPIO_MODE_AF_PP;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+  GPIO_InitStructure.Alternate = GPIO_AF12_FSMC;
 
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4 |
-  GPIO_Pin_5 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 |
-  GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_14 | GPIO_Pin_15;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin = GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 |
+  GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 |
+  GPIO_PIN_14 | GPIO_PIN_15;
 
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 |
-  GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_13 |
-  GPIO_Pin_14 | GPIO_Pin_15;
-
-  GPIO_Init(GPIOE, &GPIO_InitStructure);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
 
   // Reset pin as out push-pull
-  GPIO_InitStructure.GPIO_Pin = ILI9320_RST_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(ILI9320_RST_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin = ILI9320_RST_PIN;
+  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStructure.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(ILI9320_RST_PORT, &GPIO_InitStructure);
 
   // Enable FSMC
-  RCC_AHB3PeriphClockCmd(RCC_AHB3Periph_FSMC, ENABLE);
+  __HAL_RCC_FSMC_CLK_ENABLE();
 //  printf("%s 0x%08x\r\n", __FUNCTION__, (unsigned int)FSMC_Bank1->BTCR[0]);
 //  FSMC_Bank1->BTCR[0] = FSMC_BCR1_MBKEN | FSMC_BCR1_MWID_0 | FSMC_BCR1_WREN;
 //  printf("%s 0x%08x\r\n", __FUNCTION__, (unsigned int)FSMC_Bank1->BTCR[0]);
 //  FSMC_Bank1->BTCR[1] = 0x1404;
 
-  FSMC_NORSRAMInitTypeDef  FSMC_NORSRAM_InitStructure;
-  FSMC_NORSRAMTimingInitTypeDef FSMC_NORSRAM_Timing;
+  hsram.Instance  = FSMC_NORSRAM_DEVICE;
+  hsram.Extended  = FSMC_NORSRAM_EXTENDED_DEVICE;
 
-  FSMC_NORSRAM_Timing.FSMC_AddressSetupTime       = 0x04;
-  FSMC_NORSRAM_Timing.FSMC_AddressHoldTime        = 0x00;
-  FSMC_NORSRAM_Timing.FSMC_DataSetupTime          = 0x14;
-  FSMC_NORSRAM_Timing.FSMC_BusTurnAroundDuration  = 0x00;
-  FSMC_NORSRAM_Timing.FSMC_CLKDivision            = 0x00;
-  FSMC_NORSRAM_Timing.FSMC_DataLatency            = 0x00;
-  FSMC_NORSRAM_Timing.FSMC_AccessMode             = FSMC_AccessMode_B;
+  timing.AddressSetupTime       = 4;
+  timing.AddressHoldTime        = 0;
+  timing.DataSetupTime          = 0x14;
+  timing.BusTurnAroundDuration  = 0;
+  timing.CLKDivision            = 0;
+  timing.DataLatency            = 0;
+  timing.AccessMode             = FSMC_ACCESS_MODE_B;
 
-  FSMC_NORSRAM_InitStructure.FSMC_Bank                  = FSMC_Bank1_NORSRAM1;
-  FSMC_NORSRAM_InitStructure.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_MemoryType            = FSMC_MemoryType_NOR;
-  FSMC_NORSRAM_InitStructure.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;
-  FSMC_NORSRAM_InitStructure.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_Low;
-  FSMC_NORSRAM_InitStructure.FSMC_WrapMode              = FSMC_WrapMode_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
-  FSMC_NORSRAM_InitStructure.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;
-  FSMC_NORSRAM_InitStructure.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_ExtendedMode          = FSMC_ExtendedMode_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;
-  FSMC_NORSRAM_InitStructure.FSMC_ReadWriteTimingStruct = &FSMC_NORSRAM_Timing;
-  FSMC_NORSRAM_InitStructure.FSMC_WriteTimingStruct     = &FSMC_NORSRAM_Timing;
+  hsram.Init.NSBank             = FSMC_NORSRAM_BANK1;
+  hsram.Init.DataAddressMux     = FSMC_DATA_ADDRESS_MUX_DISABLE;
+  hsram.Init.MemoryType         = FSMC_MEMORY_TYPE_SRAM;
+  hsram.Init.MemoryDataWidth    = FSMC_NORSRAM_MEM_BUS_WIDTH_16;
+  hsram.Init.BurstAccessMode    = FSMC_BURST_ACCESS_MODE_DISABLE;
+  hsram.Init.WaitSignalPolarity = FSMC_WAIT_SIGNAL_POLARITY_LOW;
+  hsram.Init.WrapMode           = FSMC_WRAP_MODE_DISABLE;
+  hsram.Init.WaitSignalActive   = FSMC_WAIT_TIMING_BEFORE_WS;
+  hsram.Init.WriteOperation     = FSMC_WRITE_OPERATION_ENABLE;
+  hsram.Init.WaitSignal         = FSMC_WAIT_SIGNAL_DISABLE;
+  hsram.Init.ExtendedMode       = FSMC_EXTENDED_MODE_DISABLE;
+  hsram.Init.AsynchronousWait   = FSMC_ASYNCHRONOUS_WAIT_DISABLE;
+  hsram.Init.WriteBurst         = FSMC_WRITE_BURST_DISABLE;
 
-  FSMC_NORSRAMInit(&FSMC_NORSRAM_InitStructure);
+  /* Initialize the SRAM controller */
+  if(HAL_SRAM_Init(&hsram, &timing, &timing) != HAL_OK) {
+    /* Initialization Error */
+    COMMON_HAL_ErrorHandler();
+  }
+
+
+//  FSMC_NORSRAMInitTypeDef  FSMC_NORSRAM_InitStructure;
+//  FSMC_NORSRAMTimingInitTypeDef FSMC_NORSRAM_Timing;
+//
+//  FSMC_NORSRAM_Timing.FSMC_AddressSetupTime       = 0x04;
+//  FSMC_NORSRAM_Timing.FSMC_AddressHoldTime        = 0x00;
+//  FSMC_NORSRAM_Timing.FSMC_DataSetupTime          = 0x14;
+//  FSMC_NORSRAM_Timing.FSMC_BusTurnAroundDuration  = 0x00;
+//  FSMC_NORSRAM_Timing.FSMC_CLKDivision            = 0x00;
+//  FSMC_NORSRAM_Timing.FSMC_DataLatency            = 0x00;
+//  FSMC_NORSRAM_Timing.FSMC_AccessMode             = FSMC_AccessMode_B;
+
+//  FSMC_NORSRAM_InitStructure.FSMC_Bank                  = FSMC_Bank1_NORSRAM1;
+//  FSMC_NORSRAM_InitStructure.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_MemoryType            = FSMC_MemoryType_NOR;
+//  FSMC_NORSRAM_InitStructure.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;
+//  FSMC_NORSRAM_InitStructure.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_Low;
+//  FSMC_NORSRAM_InitStructure.FSMC_WrapMode              = FSMC_WrapMode_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
+//  FSMC_NORSRAM_InitStructure.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;
+//  FSMC_NORSRAM_InitStructure.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_ExtendedMode          = FSMC_ExtendedMode_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;
+//  FSMC_NORSRAM_InitStructure.FSMC_ReadWriteTimingStruct = &FSMC_NORSRAM_Timing;
+//  FSMC_NORSRAM_InitStructure.FSMC_WriteTimingStruct     = &FSMC_NORSRAM_Timing;
+
+//  FSMC_NORSRAMInit(&FSMC_NORSRAM_InitStructure);
 
   /* Enable FSMC Bank1_SRAM Bank */
-  FSMC_NORSRAMCmd(FSMC_Bank1_NORSRAM1, ENABLE);
+//  FSMC_NORSRAMCmd(FSMC_Bank1_NORSRAM1, ENABLE);
 
 }
 
@@ -180,11 +193,11 @@ uint16_t ILI9320_HAL_ReadReg(uint16_t reg) {
  */
 void ILI9320_HAL_ResetOn(void) {
 
-  GPIO_ResetBits(ILI9320_RST_PORT, ILI9320_RST_PIN);
+  HAL_GPIO_WritePin(ILI9320_RST_PORT, ILI9320_RST_PIN, GPIO_PIN_RESET);
 }
 /**
  * @brief Turn reset off.
  */
 void ILI9320_HAL_ResetOff(void) {
-  GPIO_SetBits(ILI9320_RST_PORT, ILI9320_RST_PIN);
+  HAL_GPIO_WritePin(ILI9320_RST_PORT, ILI9320_RST_PIN, GPIO_PIN_SET);
 }
